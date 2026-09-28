@@ -4,6 +4,8 @@ import '../../domain/repositories/dive_log_repository.dart';
 import '../../infrastructure/repositories/in_memory_dive_log_repository.dart';
 import '../../usecase/get_dive_logs.dart';
 import '../../usecase/save_dive_log.dart';
+import '../../usecase/delete_dive_log.dart';
+import '../../../my_gear/interface/controllers/gear_controller.dart';
 import '../../../../core/usecase/usecase.dart';
 
 // --- DI Providers ---
@@ -24,6 +26,12 @@ final getDiveLogsUseCaseProvider = Provider<GetDiveLogs>((ref) {
 final saveDiveLogUseCaseProvider = Provider<SaveDiveLog>((ref) {
   final repository = ref.watch(diveLogRepositoryProvider);
   return SaveDiveLog(repository);
+});
+
+/// ログ削除ユースケースのProvider
+final deleteDiveLogUseCaseProvider = Provider<DeleteDiveLog>((ref) {
+  final repository = ref.watch(diveLogRepositoryProvider);
+  return DeleteDiveLog(repository);
 });
 
 // --- State Controller (Notifier) ---
@@ -97,6 +105,31 @@ class DiveLogListNotifier extends AsyncNotifier<List<DiveLog>> {
       final saveLog = ref.read(saveDiveLogUseCaseProvider);
       await saveLog(log);
       final getLogs = ref.read(getDiveLogsUseCaseProvider);
+      return await getLogs(const NoParams());
+    });
+  }
+
+  /// ログを削除して一覧状態を更新
+  ///
+  /// 対象ログに紐付く機材がある場合、機材のダイブ本数を自動で1減算（デクリメント）して元に戻す。
+  Future<void> deleteLog(String logId) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final getLogs = ref.read(getDiveLogsUseCaseProvider);
+      final currentLogs = await getLogs(const NoParams());
+      final targetLog = currentLogs.where((l) => l.id == logId).firstOrNull;
+
+      // 1. ログの削除を実行
+      final deleteUseCase = ref.read(deleteDiveLogUseCaseProvider);
+      await deleteUseCase(logId);
+
+      // 2. ログに登録されていた機材のダイブ本数を減算（巻き戻し）
+      if (targetLog != null && targetLog.selectedGearIds.isNotEmpty) {
+        await ref
+            .read(gearListNotifierProvider.notifier)
+            .decrementGearDives(targetLog.selectedGearIds);
+      }
+
       return await getLogs(const NoParams());
     });
   }

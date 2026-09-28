@@ -54,6 +54,11 @@ class DiveLogDetailPage extends ConsumerWidget {
                 tooltip: '編集',
                 onPressed: () => _navigateToEdit(context, log),
               ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: '削除',
+                onPressed: () => _confirmDelete(context, ref, log),
+              ),
             ],
           ),
           body: ListView(
@@ -531,6 +536,47 @@ class DiveLogDetailPage extends ConsumerWidget {
         builder: (_) => DiveLogFormPage(initialLog: log),
       ),
     );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    DiveLog log,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ダイビングログの削除'),
+        content: Text(
+          log.selectedGearIds.isNotEmpty
+              ? 'このダイビングログを削除しますか？\n\n※この操作は取り消せません。\n※使用機材（${log.selectedGearIds.length}点）のダイブ本数は自動で1本減算（巻き戻し）されます。'
+              : 'このダイビングログを削除しますか？\n\n※この操作は取り消せません。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('削除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await ref.read(diveLogListProvider.notifier).deleteLog(log.id);
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ダイビングログを削除しました')),
+        );
+      }
+    }
   }
 
   Widget _buildSectionCard({

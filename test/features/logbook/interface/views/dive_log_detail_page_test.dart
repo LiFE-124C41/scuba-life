@@ -139,5 +139,35 @@ void main() {
       // 関連予定チップが表示されていること
       expect(find.textContaining('関連予定:'), findsOneWidget);
     });
+
+    testWidgets('削除ボタンタップ: 確認ダイアログが表示され、削除を実行できること', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // AppBarの削除アイコン
+      final deleteIcon = find.byIcon(Icons.delete_outline);
+      expect(deleteIcon, findsOneWidget);
+
+      await tester.tap(deleteIcon);
+      await tester.pumpAndSettle();
+
+      // 確認ダイアログが表示されること
+      expect(find.text('ダイビングログの削除'), findsOneWidget);
+      expect(find.textContaining('このダイビングログを削除しますか？'), findsOneWidget);
+
+      // ダイアログ内の「削除」ボタンをタップ
+      final confirmDeleteBtn = find.widgetWithText(FilledButton, '削除');
+      expect(confirmDeleteBtn, findsOneWidget);
+
+      await tester.tap(confirmDeleteBtn);
+      await tester.pumpAndSettle();
+
+      // リポジトリからログが削除されていること
+      expect(mockRepo.storage.any((l) => l.id == 'detail-test-log-1'), isFalse);
+    });
   });
 }
