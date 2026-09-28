@@ -4,6 +4,9 @@ class DiveSchedule {
   final String title;
   final DateTime eventDate;
   final String destination;
+  final String? spotId;
+  final double? latitude;
+  final double? longitude;
   final String diveShop;
   final int plannedDivesCount;
   final String memo;
@@ -13,6 +16,9 @@ class DiveSchedule {
     required this.title,
     required this.eventDate,
     required this.destination,
+    this.spotId,
+    this.latitude,
+    this.longitude,
     required this.diveShop,
     this.plannedDivesCount = 2,
     this.memo = '',
@@ -25,6 +31,12 @@ class DiveSchedule {
     }
     if (plannedDivesCount < 1) {
       throw ArgumentError('予定ダイビング本数は1本以上である必要があります。');
+    }
+    if (latitude != null && (latitude! < -90.0 || latitude! > 90.0)) {
+      throw ArgumentError('緯度は-90から90の範囲である必要があります。');
+    }
+    if (longitude != null && (longitude! < -180.0 || longitude! > 180.0)) {
+      throw ArgumentError('経度は-180から180の範囲である必要があります。');
     }
   }
 
@@ -40,6 +52,9 @@ class DiveSchedule {
     String? title,
     DateTime? eventDate,
     String? destination,
+    String? spotId,
+    double? latitude,
+    double? longitude,
     String? diveShop,
     int? plannedDivesCount,
     String? memo,
@@ -49,6 +64,9 @@ class DiveSchedule {
       title: title ?? this.title,
       eventDate: eventDate ?? this.eventDate,
       destination: destination ?? this.destination,
+      spotId: spotId ?? this.spotId,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       diveShop: diveShop ?? this.diveShop,
       plannedDivesCount: plannedDivesCount ?? this.plannedDivesCount,
       memo: memo ?? this.memo,
@@ -66,6 +84,9 @@ class DiveSchedule {
           eventDate.month == other.eventDate.month &&
           eventDate.day == other.eventDate.day &&
           destination == other.destination &&
+          spotId == other.spotId &&
+          latitude == other.latitude &&
+          longitude == other.longitude &&
           diveShop == other.diveShop &&
           plannedDivesCount == other.plannedDivesCount &&
           memo == other.memo;
@@ -76,6 +97,9 @@ class DiveSchedule {
       title.hashCode ^
       eventDate.hashCode ^
       destination.hashCode ^
+      spotId.hashCode ^
+      latitude.hashCode ^
+      longitude.hashCode ^
       diveShop.hashCode ^
       plannedDivesCount.hashCode ^
       memo.hashCode;

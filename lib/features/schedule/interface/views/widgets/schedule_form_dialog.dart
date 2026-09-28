@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/dive_schedule.dart';
+import '../../../../dive_spot/interface/views/dive_spot_select_modal.dart';
 
 /// 新規ダイビング予定登録用ダイアログ
 class ScheduleFormDialog extends StatefulWidget {
@@ -34,6 +35,9 @@ class _ScheduleFormDialogState extends State<ScheduleFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _destinationController;
+  String? _spotId;
+  double? _latitude;
+  double? _longitude;
   late final TextEditingController _diveShopController;
   late final TextEditingController _memoController;
   late DateTime _selectedDate;
@@ -79,6 +83,9 @@ class _ScheduleFormDialogState extends State<ScheduleFormDialog> {
         title: _titleController.text.trim(),
         eventDate: _selectedDate,
         destination: _destinationController.text.trim(),
+        spotId: _spotId,
+        latitude: _latitude,
+        longitude: _longitude,
         diveShop: _diveShopController.text.trim().isEmpty
             ? 'セルフ / 未定'
             : _diveShopController.text.trim(),
@@ -132,20 +139,76 @@ class _ScheduleFormDialogState extends State<ScheduleFormDialog> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: _destinationController,
-                  decoration: const InputDecoration(
-                    labelText: '目的地 / ポイント *',
-                    hintText: '例: 西伊豆 大瀬崎',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (val) {
-                    if (val == null || val.trim().isEmpty) {
-                      return '目的地を入力してください';
-                    }
-                    return null;
-                  },
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _destinationController,
+                        decoration: const InputDecoration(
+                          labelText: '目的地 / ポイント *',
+                          hintText: '例: 西伊豆 大瀬崎',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return '目的地を入力してください';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          final spot = await DiveSpotSelectModal.show(context);
+                          if (spot != null) {
+                            setState(() {
+                              _spotId = spot.id;
+                              _latitude = spot.latitude;
+                              _longitude = spot.longitude;
+                              _destinationController.text = spot.name;
+                            });
+                          }
+                        },
+                        child: const Text('ポイント選択'),
+                      ),
+                    ),
+                  ],
                 ),
+                if (_latitude != null && _longitude != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 14, color: Color(0xFF0077B6)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '位置情報: ${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF0077B6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _spotId = null;
+                            _latitude = null;
+                            _longitude = null;
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: const Text('解除', style: TextStyle(fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _diveShopController,

@@ -4,6 +4,7 @@ import '../../domain/entities/dive_log.dart';
 import '../controllers/dive_log_controller.dart';
 import '../../../schedule/domain/entities/dive_schedule.dart';
 import '../../../schedule/interface/controllers/schedule_controller.dart';
+import '../../../dive_spot/interface/views/dive_spot_select_modal.dart';
 
 /// ダイビングログ新規作成・編集用フルスクリーンフォーム画面
 class DiveLogFormPage extends ConsumerStatefulWidget {
@@ -35,6 +36,9 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
   late String _waterType;
 
   late TextEditingController _locationController;
+  String? _spotId;
+  double? _latitude;
+  double? _longitude;
   late TextEditingController _diveCenterController;
 
   // 2. 深度・気圧・計画
@@ -109,6 +113,9 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
     _locationController = TextEditingController(
       text: log?.location ?? sched?.destination ?? '',
     );
+    _spotId = log?.spotId ?? sched?.spotId;
+    _latitude = log?.latitude ?? sched?.latitude;
+    _longitude = log?.longitude ?? sched?.longitude;
     _diveCenterController = TextEditingController(
       text: log?.diveCenter ?? sched?.diveShop ?? '',
     );
@@ -304,6 +311,9 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
       entryTime: entryDateTime,
       exitTime: exitDateTime,
       location: _locationController.text.trim(),
+      spotId: _spotId,
+      latitude: _latitude,
+      longitude: _longitude,
       diveCenter: _diveCenterController.text.trim(),
       rating: _rating,
       divePurpose: _divePurpose,
@@ -500,20 +510,78 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
                     child: const Text('変更'),
                   ),
                 ),
-                TextFormField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(
-                    labelText: 'ポイント名 / スポット *',
-                    hintText: '例: 伊豆・大瀬崎（湾内）',
-                    prefixIcon: Icon(Icons.place_outlined),
-                  ),
-                  validator: (val) {
-                    if (val == null || val.trim().isEmpty) {
-                      return 'ポイント名を入力してください';
-                    }
-                    return null;
-                  },
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _locationController,
+                        decoration: const InputDecoration(
+                          labelText: 'ポイント名 / スポット *',
+                          hintText: '例: 伊豆・大瀬崎（湾内）',
+                          prefixIcon: Icon(Icons.place_outlined),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'ポイント名を入力してください';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: OutlinedButton.icon(
+                        key: const Key('select_spot_button'),
+                        onPressed: () async {
+                          final spot = await DiveSpotSelectModal.show(context);
+                          if (spot != null) {
+                            setState(() {
+                              _spotId = spot.id;
+                              _latitude = spot.latitude;
+                              _longitude = spot.longitude;
+                              _locationController.text = spot.name;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.map, size: 18),
+                        label: const Text('選択'),
+                      ),
+                    ),
+                  ],
                 ),
+                if (_latitude != null && _longitude != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 14, color: Color(0xFF0077B6)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '位置情報: ${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF0077B6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _spotId = null;
+                            _latitude = null;
+                            _longitude = null;
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: const Text('解除', style: TextStyle(fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _diveCenterController,

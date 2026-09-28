@@ -5,6 +5,8 @@ import '../controllers/dive_log_controller.dart';
 import 'dive_log_form_page.dart';
 import '../../../schedule/interface/controllers/schedule_controller.dart';
 import '../../../schedule/interface/views/widgets/schedule_detail_sheet.dart';
+import 'package:latlong2/latlong.dart';
+import '../../../dive_spot/interface/views/widgets/spot_map_widget.dart';
 
 /// ダイビングログ全情報閲覧用の詳細画面
 class DiveLogDetailPage extends ConsumerWidget {
@@ -198,6 +200,57 @@ class DiveLogDetailPage extends ConsumerWidget {
                   ),
                 ),
               ),
+              if (log.latitude != null && log.longitude != null) ...[
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.map, size: 20, color: Color(0xFF0077B6)),
+                            const SizedBox(width: 8),
+                            Text(
+                              'ダイビングポイントマップ',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${log.latitude!.toStringAsFixed(4)}, ${log.longitude!.toStringAsFixed(4)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        height: 180,
+                        child: SpotMapWidget(
+                          points: [
+                            MapPointItem(
+                              id: log.id,
+                              title: log.location,
+                              latitude: log.latitude!,
+                              longitude: log.longitude!,
+                              pinColor: const Color(0xFF0077B6),
+                            ),
+                          ],
+                          initialCenter: LatLng(log.latitude!, log.longitude!),
+                          initialZoom: 13.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
 
               // 2. 潜水データ・プロファイル (実績とSAC、計画)

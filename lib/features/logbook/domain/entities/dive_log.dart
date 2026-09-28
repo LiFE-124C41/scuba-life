@@ -8,6 +8,9 @@ class DiveLog {
   final DateTime entryTime; // 潜水開始時刻
   final DateTime exitTime; // 潜水終了時刻
   final String location; // ポイント名
+  final String? spotId; // 関連するダイビングポイントマスターID (オプショナル)
+  final double? latitude; // 緯度 (オプショナル)
+  final double? longitude; // 経度 (オプショナル)
   final String diveCenter; // 主催センター / ショップ名
   final int rating; // 5段階評価 (1〜5)
   final String divePurpose; // ダイビング目的 (ファン、講習・教育 等)
@@ -56,6 +59,9 @@ class DiveLog {
     required this.entryTime,
     required this.exitTime,
     required this.location,
+    this.spotId,
+    this.latitude,
+    this.longitude,
     this.diveCenter = '',
     this.rating = 3,
     this.divePurpose = 'ファンダイビング',
@@ -110,6 +116,12 @@ class DiveLog {
     if (weightKg != null && weightKg! < 0) {
       throw ArgumentError('ウェイトは0以上である必要があります。');
     }
+    if (latitude != null && (latitude! < -90.0 || latitude! > 90.0)) {
+      throw ArgumentError('緯度は-90から90の範囲である必要があります。');
+    }
+    if (longitude != null && (longitude! < -180.0 || longitude! > 180.0)) {
+      throw ArgumentError('経度は-180から180の範囲である必要があります。');
+    }
   }
 
   /// 潜水時間（分）
@@ -135,6 +147,9 @@ class DiveLog {
     DateTime? entryTime,
     DateTime? exitTime,
     String? location,
+    String? spotId,
+    double? latitude,
+    double? longitude,
     String? diveCenter,
     int? rating,
     String? divePurpose,
@@ -175,6 +190,9 @@ class DiveLog {
       entryTime: entryTime ?? this.entryTime,
       exitTime: exitTime ?? this.exitTime,
       location: location ?? this.location,
+      spotId: spotId ?? this.spotId,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       diveCenter: diveCenter ?? this.diveCenter,
       rating: rating ?? this.rating,
       divePurpose: divePurpose ?? this.divePurpose,

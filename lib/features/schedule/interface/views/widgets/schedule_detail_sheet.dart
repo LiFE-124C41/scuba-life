@@ -5,6 +5,8 @@ import '../../../../logbook/interface/controllers/dive_log_controller.dart';
 import '../../../../logbook/interface/views/dive_log_detail_page.dart';
 import '../../../../logbook/interface/views/dive_log_form_page.dart';
 import '../../../domain/entities/dive_schedule.dart';
+import 'package:latlong2/latlong.dart';
+import '../../../../dive_spot/interface/views/widgets/spot_map_widget.dart';
 
 /// 予定の詳細情報を表示するボトムシート
 class ScheduleDetailSheet extends ConsumerWidget {
@@ -139,6 +141,62 @@ class ScheduleDetailSheet extends ConsumerWidget {
                 ),
               ),
             ),
+
+            if (schedule.latitude != null && schedule.longitude != null) ...[
+              const SizedBox(height: 16),
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: colorScheme.outlineVariant),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.map, size: 18, color: Color(0xFF0077B6)),
+                          const SizedBox(width: 8),
+                          Text(
+                            'ダイビングポイント位置',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${schedule.latitude!.toStringAsFixed(4)}, ${schedule.longitude!.toStringAsFixed(4)}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      height: 160,
+                      child: SpotMapWidget(
+                        points: [
+                          MapPointItem(
+                            id: schedule.id,
+                            title: schedule.destination,
+                            latitude: schedule.latitude!,
+                            longitude: schedule.longitude!,
+                            pinColor: Colors.teal,
+                            pinIcon: Icons.calendar_today,
+                          ),
+                        ],
+                        initialCenter: LatLng(schedule.latitude!, schedule.longitude!),
+                        initialZoom: 12.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             if (schedule.memo.isNotEmpty) ...[
               const SizedBox(height: 16),

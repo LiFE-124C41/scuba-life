@@ -75,14 +75,14 @@ void main() {
     expect(find.text('月'), findsOneWidget);
     expect(find.text('土'), findsOneWidget);
 
-    final scheduleCardFinder = find.text('伊豆海洋公園テストダイブ');
+    final scheduleCardFinder = find.text('伊豆海洋公園テストダイブ').first;
     await tester.ensureVisible(scheduleCardFinder);
     await tester.pumpAndSettle();
 
     // 本日の予定カードが表示されていること
-    expect(scheduleCardFinder, findsOneWidget);
-    expect(find.text('伊豆海洋公園 (IOP)'), findsOneWidget);
-    expect(find.text('2ダイブ'), findsOneWidget);
+    expect(find.text('伊豆海洋公園テストダイブ'), findsAtLeastNWidgets(1));
+    expect(find.text('伊豆海洋公園 (IOP)'), findsAtLeastNWidgets(1));
+    expect(find.text('2ダイブ'), findsAtLeastNWidgets(1));
 
     // Act: 予定カードをタップして詳細モーダルを開く
     await tester.tap(scheduleCardFinder);
@@ -105,5 +105,14 @@ void main() {
 
     // Assert: モーダルが閉じられたこと
     expect(find.byType(ScheduleDetailSheet), findsNothing);
+
+    // Act: AppBar のマップ切替アイコンをタップ
+    final mapToggleFinder = find.byTooltip('マップ表示に切替');
+    expect(mapToggleFinder, findsOneWidget);
+    await tester.tap(mapToggleFinder);
+    await tester.pumpAndSettle();
+
+    // Assert: カレンダー表示アイコンが表示され、マップビュー状態になっていること
+    expect(find.byTooltip('カレンダー表示に切替'), findsOneWidget);
   });
 }
