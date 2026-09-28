@@ -8,7 +8,15 @@
 ## 🌊 主要機能
 
 ### 1. ログブック（Logbook）
-- **潜水記録の登録・管理**: エントリー/エグジット時刻、最大水深、平均水深、開始/終了タンク残圧、ダイブポイント、メモの記録。
+- **詳細ダイビング記録の登録・管理（全画面フォーム）**:
+  - ダイアログから専用のフルスクリーン入力フォーム（`DiveLogFormPage`）に移行。
+  - **記録項目（24項目以上）**:
+    - **基本・評価**: 5段階星評価、日付、ポイント名、主催センター/ショップ名、ダイビング目的（ファン/講習/体験等）
+    - **潜水・エントリー**: 潜水開始・終了時刻、潜水時間（分）、エントリー方式（ボート/ビーチ）、水域（海洋/湖等）、水質（海水/淡水）
+    - **深度・気圧（実績＆計画）**: 最大水深/平均水深、開始/終了タンク残圧、計画水深、計画時間、計画残圧
+    - **環境・海況・潮汐**: 天気、気温、最高/最低水温、透明度、潮流タイプ（大潮/中潮等）、水中/水面の流れ、潮汐時刻（満潮/干潮 各2回）
+    - **機材・シリンダー**: シリンダー材質（スチール/アルミ）・容量（L）、ウェイト量（kg）、使用機材
+    - **バディ・生物・メモ**: バディ名（複数タグ追加）、出会った生物（タグ追加）、自由記入メモ
 - **SACレート自動計算（ドメインロジック）**:
   - 水面空気消費率（Surface Air Consumption Rate: $L/\text{min}$）を自動算出。
   - 計算式: $\text{SAC} = \frac{\Delta P \times V_{\text{tank}}}{T_{\text{bottom}} \times (1 + D_{\text{avg}} / 10)}$
@@ -64,7 +72,9 @@ lib/
 │   │   │   └── save_dive_log.dart
 │   │   ├── interface/                      # インターフェース層（UI、Riverpod Controller）
 │   │   │   ├── controllers/dive_log_controller.dart  # AsyncNotifier, DI Providers
-│   │   │   └── views/dive_log_page.dart              # ConsumerWidget
+│   │   │   └── views/
+│   │   │       ├── dive_log_page.dart      # ログ一覧（ConsumerWidget）
+│   │   │       └── dive_log_form_page.dart # ログ作成・編集フォーム
 │   │   └── infrastructure/                 # インフラ層（データ永続化実装、外部連携）
 │   │       └── repositories/in_memory_dive_log_repository.dart
 │   ├── schedule/                           # ② スケジュール管理機能
