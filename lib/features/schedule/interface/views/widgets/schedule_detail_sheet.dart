@@ -7,6 +7,8 @@ import '../../../../logbook/interface/views/dive_log_form_page.dart';
 import '../../../domain/entities/dive_schedule.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../dive_spot/interface/views/widgets/spot_map_widget.dart';
+import '../../../../weather/domain/entities/marine_weather.dart';
+import '../../../../weather/interface/controllers/weather_controller.dart';
 
 /// 予定の詳細情報を表示するボトムシート
 class ScheduleDetailSheet extends ConsumerWidget {
@@ -197,6 +199,9 @@ class ScheduleDetailSheet extends ConsumerWidget {
                 ),
               ),
             ],
+
+            const SizedBox(height: 16),
+            _buildWeatherSection(context, ref),
 
             if (schedule.memo.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -390,6 +395,280 @@ class ScheduleDetailSheet extends ConsumerWidget {
     );
   }
 
+  Widget _buildWeatherSection(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // 緯度経度が未登録の場合の表示
+    if (schedule.latitude == null || schedule.longitude == null) {
+      return Card(
+        elevation: 0,
+        color: colorScheme.surfaceContainerHighest.withAlpha(80),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: colorScheme.outlineVariant),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.cloud_off_outlined, color: Colors.grey, size: 24),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'ダイビングポイントの緯度・経度が設定されていないため、海況予報を取得できません。',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final weatherAsync = ref.watch(scheduleMarineWeatherProvider(schedule));
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.waves, size: 20, color: Color(0xFF0077B6)),
+                const SizedBox(width: 8),
+                Text(
+                  '予定日の海況・気象予報',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 18),
+                  tooltip: '海況予報を再取得',
+                  onPressed: () {
+                    ref.invalidate(scheduleMarineWeatherProvider(schedule));
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            weatherAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Open-Meteo から海況データを取得中...',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              error: (err, _) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: colorScheme.error, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '海況データの取得に失敗しました。通信環境をご確認ください。',
+                        style: TextStyle(fontSize: 12, color: colorScheme.error),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              data: (weather) {
+                if (weather == null) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blueGrey, size: 20),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '海況予報は予定日の約7日前から取得できます。\n（指定された日程は予報期間外です）',
+                            style: TextStyle(fontSize: 12, color: Colors.blueGrey),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final condColor = _getConditionColor(weather.conditionLevel);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // コンディション判定ヘッダー
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: condColor.withAlpha(25),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: condColor.withAlpha(120)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.verified, size: 18, color: condColor),
+                          const SizedBox(width: 8),
+                          Text(
+                            '潜水コンディション: ${weather.conditionLevel.label}',
+                            style: TextStyle(
+                              color: condColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${weather.forecastTime.month}月${weather.forecastTime.day}日 予報',
+                            style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 各種指標グリッド
+                    GridView.count(
+                      crossAxisCount: 3,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      childAspectRatio: 1.8,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      children: [
+                        _buildWeatherGridItem(
+                          label: '天気 / 気温',
+                          value: '${weather.weatherDescription}\n${weather.airTemperatureCelsius.toStringAsFixed(1)}℃',
+                          icon: Icons.wb_sunny_outlined,
+                          iconColor: Colors.orange,
+                        ),
+                        _buildWeatherGridItem(
+                          label: '予想水温',
+                          value: '${weather.waterTemperatureCelsius.toStringAsFixed(1)}℃',
+                          icon: Icons.water_outlined,
+                          iconColor: Colors.blue,
+                        ),
+                        _buildWeatherGridItem(
+                          label: '波高',
+                          value: '${weather.waveHeightMeter.toStringAsFixed(1)} m',
+                          icon: Icons.waves,
+                          iconColor: Colors.teal,
+                        ),
+                        _buildWeatherGridItem(
+                          label: '風向・風速',
+                          value: '${weather.windDirection}\n${weather.windSpeedMeterPerSec.toStringAsFixed(1)} m/s',
+                          icon: Icons.air,
+                          iconColor: Colors.blueGrey,
+                        ),
+                        _buildWeatherGridItem(
+                          label: '予想透明度',
+                          value: '約${weather.estimatedVisibilityMeter.toInt()} m',
+                          icon: Icons.visibility_outlined,
+                          iconColor: Colors.cyan,
+                        ),
+                        _buildWeatherGridItem(
+                          label: '潮回り',
+                          value: weather.tideType.label,
+                          icon: Icons.nights_stay_outlined,
+                          iconColor: Colors.deepPurple,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '提供: Open-Meteo Marine API',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: colorScheme.onSurfaceVariant.withAlpha(150),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeatherGridItem({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: iconColor.withAlpha(15),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: iconColor),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getConditionColor(DivingConditionLevel level) {
+    switch (level) {
+      case DivingConditionLevel.good:
+        return const Color(0xFF2E7D32);
+      case DivingConditionLevel.caution:
+        return const Color(0xFFEF6C00);
+      case DivingConditionLevel.closed:
+        return const Color(0xFFC62828);
+    }
+  }
+
   void _showDeleteConfirmDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -417,3 +696,4 @@ class ScheduleDetailSheet extends ConsumerWidget {
     );
   }
 }
+

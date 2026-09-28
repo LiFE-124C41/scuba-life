@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../features/gear_sale/interface/views/gear_sale_page.dart';
 import '../features/logbook/interface/views/dive_log_page.dart';
 import '../features/schedule/interface/views/schedule_page.dart';
-import '../features/weather/interface/views/weather_page.dart';
 
 class ScubaLifeApp extends StatelessWidget {
   const ScubaLifeApp({super.key});
@@ -37,7 +36,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final List<Widget> _pages = const [
     DiveLogPage(),
     SchedulePage(),
-    WeatherPage(),
     GearSalePage(),
   ];
 
@@ -62,11 +60,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             icon: Icon(Icons.calendar_today_outlined),
             selectedIcon: Icon(Icons.calendar_today),
             label: '予定管理',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.water_drop_outlined),
-            selectedIcon: Icon(Icons.water_drop),
-            label: '海況・気象',
           ),
           NavigationDestination(
             icon: Icon(Icons.shopping_bag_outlined),

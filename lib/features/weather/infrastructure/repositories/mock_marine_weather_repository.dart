@@ -59,4 +59,32 @@ class MockMarineWeatherRepository implements MarineWeatherRepository {
       ),
     ];
   }
+
+  @override
+  Future<MarineWeather?> getForecastForLocation({
+    required double latitude,
+    required double longitude,
+    required DateTime targetDate,
+    String? spotName,
+  }) async {
+    final now = DateTime.now();
+    final difference = targetDate.difference(DateTime(now.year, now.month, now.day)).inDays;
+    // 予報範囲は当日を含めて最大8日間（0〜7日後）
+    if (difference < 0 || difference > 7) {
+      return null;
+    }
+
+    return MarineWeather(
+      spotName: spotName ?? '指定ポイント (${latitude.toStringAsFixed(2)}, ${longitude.toStringAsFixed(2)})',
+      forecastTime: targetDate,
+      weatherDescription: difference % 2 == 0 ? '晴れ' : '晴れ時々曇り',
+      airTemperatureCelsius: 22.0 + (difference % 3),
+      waterTemperatureCelsius: 20.5 + (difference % 2),
+      waveHeightMeter: 0.7 + (difference * 0.1),
+      windDirection: '南南東',
+      windSpeedMeterPerSec: 3.8,
+      estimatedVisibilityMeter: 15.0,
+      tideType: TideType.middle,
+    );
+  }
 }
