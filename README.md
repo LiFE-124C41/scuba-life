@@ -1,7 +1,7 @@
 # Scuba Life (スクーバダイバー向け総合支援アプリ)
 
 スクーバダイバーのためのオールインワン・モバイルアプリケーションです。
-ダイビングログの記録・分析、ツアーやトリップのスケジュール管理、海洋気象・海況情報の確認、器材セールのチェックまでを一括してサポートします。
+ダイビングログの記録・分析、ツアーやトリップのスケジュール管理、海洋気象・海況情報の確認、マイ機材の管理とオーバーホール目安の把握までを一括してサポートします。
 
 ---
 
@@ -58,10 +58,18 @@
 - **OpenStreetMap 共通ウィジェット（`SpotMapWidget`）**:
   - `flutter_map` + `latlong2` をベースにした API キー不要・クロスプラットフォーム対応の地図コンポーネント。単一マーカー拡大表示から複数ピン一覧表示まで対応。
 
-### 4. ダイビング器材セール情報（Gear Sale）
-- **お得なギア情報の一覧表示**: レギュレーター、ダイブコンピューター、BCD、ウェットスーツなどのセール情報を一覧化。
-- **割引率ソート・フィルター**: 割引率（% OFF）やカテゴリーに応じた賢い器材選びを支援。
-
+### 4. マイ機材管理 & オーバーホール目安管理（My Gear）
+- **マイ機材一覧とサマリーダッシュボード（`MyGearPage`, `GearSummaryCard`）**:
+  - レギュレーター、BCD、ダイブコンピューター、スーツ、軽器材（マスク・スノーケル・フィン）などのマイ機材を一元管理。
+  - 画面上部のサマリーカードで「要オーバーホール」「まもなく推奨時期」「状態良好」の件数を一覧集計。期限超過機材がある場合はアラートで注意喚起。
+  - カテゴリー別フィルターチップ（レギュレーター、BCD、ダイブコンピューターなど）による絞り込み表示。
+- **オーバーホール（OH）目安の自動判定（ドメインロジック）**:
+  - **期間基準 & ダイブ本数基準のハイブリッド判定**: 最終OH日（未実施時は購入日）と推奨周期（例: 12ヶ月）、およびOH後潜水本数（例: 100本）を基に次回目安日・残り日数を自動計算。
+  - **4段階ステータス**: 「要オーバーホール（期限または本数超過）」「まもなく推奨時期（30日以内または残り10本以内）」「状態良好」「OH対象外（フィン・スーツ等）」をバッジ表示。
+- **ワンタップでのオーバーホール完了記録**:
+  - 詳細画面（`GearDetailPage`）から「OH完了を記録」を実行することで、実施日を記録しダイブ本数を0にリセット、メモに作業履歴を自動追記。
+- **機材登録・編集フォーム（`GearFormPage`）**:
+  - カテゴリー選択、ブランド、モデル、シリアル番号、購入日、最終OH日、OH後ダイブ本数、推奨周期（月数・本数）、メンテナンスメモを詳細に登録可能。
 
 ---
 
@@ -73,7 +81,7 @@
 1. **依存関係の単方向性（内側への依存）**:
    - `domain`（最内層: Pure Dart） $\leftarrow$ `usecase`（Pure Dart） $\leftarrow$ `interface` (UI/Riverpod Notifier) / `infrastructure` (外部DB/API)
 2. **フレームワーク非依存のビジネスロジック**:
-   - ダイビング物理計算（SACレート等）やバリデーションは、Flutter SDKやRiverpodに一切依存しないPure Dartとしてドメイン層にカプセル化。
+   - ダイビング物理計算（SACレート等）やオーバーホール時期計算・ステータス判定は、Flutter SDKやRiverpodに一切依存しないPure Dartとしてドメイン層にカプセル化。
    - `Riverpod` はプレゼンテーション層（`interface`）のUI状態管理および依存性注入（DI: Dependency Injection）としてのみ利用し、ドメイン・ユースケースへのフレームワーク侵入を防止。
 3. **拡張性と保守性**:
    - データ層はリポジトリインターフェース（抽象）を挟むことで、インメモリ $\rightarrow$ SQLite (sqflite / Drift) / Isar / Firebase への差し替えが容易。テスト時も `ProviderContainer(overrides: [...])` で容易にモック化可能。
@@ -142,11 +150,26 @@ lib/
 │   │   ├── usecase/                        # 予定日の海況取得ユースケース（GetMarineWeatherForSchedule）
 │   │   ├── interface/                      # controllers（Riverpod Provider群）
 │   │   └── infrastructure/                 # Open-Meteo Marine & Forecast API DataSource, リポジトリ実装
-│   └── gear_sale/                          # ⑤ 機材セール情報機能
-│       ├── domain/
-│       ├── usecase/
-│       ├── interface/                      # controllers, views
-│       └── infrastructure/
+│   └── my_gear/                            # ⑤ マイ機材管理 & オーバーホール目安機能
+│       ├── domain/                         # ドメイン層（GearItem, GearRepository）
+│       │   ├── entities/gear_item.dart
+│       │   └── repositories/gear_repository.dart
+│       ├── usecase/                        # ユースケース層
+│       │   ├── get_gear_items.dart
+│       │   ├── save_gear_item.dart
+│       │   ├── delete_gear_item.dart
+│       │   └── record_overhaul.dart
+│       ├── interface/                      # UI・状態管理（Riverpod Notifier）
+│       │   ├── controllers/gear_controller.dart
+│       │   └── views/
+│       │       ├── my_gear_page.dart       # 機材一覧・サマリーカード
+│       │       ├── gear_detail_page.dart   # 機材詳細・OH記録
+│       │       ├── gear_form_page.dart     # 機材登録・編集フォーム
+│       │       └── widgets/
+│       │           ├── gear_summary_card.dart     # メンテナンス状況サマリー
+│       │           └── overhaul_status_badge.dart # OHステータスバッジ
+│       └── infrastructure/                 # インフラ層
+│           └── repositories/in_memory_gear_repository.dart
 └── main.dart                               # エントリーポイント (ProviderScope)
 ```
 

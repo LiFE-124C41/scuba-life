@@ -13,10 +13,10 @@ void main() {
 
     // ログブックのタイトルが表示されていることを確認
     expect(find.text('ダイビングログ'), findsOneWidget);
-    // ナビゲーションバーの各項目が表示されていることを確認（海況・気象タブは廃止され3タブ構成）
+    // ナビゲーションバーの各項目が表示されていることを確認
     expect(find.text('予定管理'), findsOneWidget);
-    expect(find.text('セール情報'), findsOneWidget);
+    expect(find.text('機材管理'), findsOneWidget);
+    expect(find.text('セール情報'), findsNothing);
     expect(find.text('海況・気象'), findsNothing);
   });
-
 }

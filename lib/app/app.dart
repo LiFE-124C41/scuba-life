@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../features/gear_sale/interface/views/gear_sale_page.dart';
 import '../features/logbook/interface/views/dive_log_page.dart';
+import '../features/my_gear/interface/views/my_gear_page.dart';
 import '../features/schedule/interface/views/schedule_page.dart';
 
 class ScubaLifeApp extends StatelessWidget {
@@ -36,7 +36,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final List<Widget> _pages = const [
     DiveLogPage(),
     SchedulePage(),
-    GearSalePage(),
+    MyGearPage(),
   ];
 
   @override
@@ -62,12 +62,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             label: '予定管理',
           ),
           NavigationDestination(
-            icon: Icon(Icons.shopping_bag_outlined),
-            selectedIcon: Icon(Icons.shopping_bag),
-            label: 'セール情報',
+            icon: Icon(Icons.build_circle_outlined),
+            selectedIcon: Icon(Icons.build_circle),
+            label: '機材管理',
           ),
         ],
       ),
     );
   }
 }
+
