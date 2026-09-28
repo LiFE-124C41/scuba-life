@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/dive_log.dart';
 import '../controllers/dive_log_controller.dart';
+import '../../../schedule/domain/entities/dive_schedule.dart';
+import '../../../schedule/interface/controllers/schedule_controller.dart';
 
 /// ダイビングログ新規作成・編集用フルスクリーンフォーム画面
 class DiveLogFormPage extends ConsumerStatefulWidget {
   final DiveLog? initialLog;
+  final DiveSchedule? initialSchedule;
 
   const DiveLogFormPage({
     super.key,
     this.initialLog,
+    this.initialSchedule,
   });
 
   @override
@@ -20,6 +24,7 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
   final _formKey = GlobalKey<FormState>();
 
   // 1. 基本情報
+  String? _selectedScheduleId;
   late DateTime _selectedDate;
   late TimeOfDay _entryTime;
   late TimeOfDay _exitTime;
@@ -83,9 +88,11 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
   void initState() {
     super.initState();
     final log = widget.initialLog;
+    final sched = widget.initialSchedule;
     final now = DateTime.now();
 
-    _selectedDate = log?.date ?? now;
+    _selectedScheduleId = log?.scheduleId ?? sched?.id;
+    _selectedDate = log?.date ?? sched?.eventDate ?? now;
     _entryTime = log != null
         ? TimeOfDay(hour: log.entryTime.hour, minute: log.entryTime.minute)
         : TimeOfDay(hour: now.hour > 0 ? now.hour - 1 : 9, minute: 0);
@@ -99,8 +106,12 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
     _waterArea = log?.waterArea ?? _waterAreas.first;
     _waterType = log?.waterType ?? _waterTypes.first;
 
-    _locationController = TextEditingController(text: log?.location ?? '');
-    _diveCenterController = TextEditingController(text: log?.diveCenter ?? '');
+    _locationController = TextEditingController(
+      text: log?.location ?? sched?.destination ?? '',
+    );
+    _diveCenterController = TextEditingController(
+      text: log?.diveCenter ?? sched?.diveShop ?? '',
+    );
 
     _maxDepthController = TextEditingController(text: log != null ? log.maxDepthMeter.toString() : '18.0');
     _avgDepthController = TextEditingController(text: log != null ? log.avgDepthMeter.toString() : '12.0');
@@ -288,6 +299,7 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
 
     final newLog = DiveLog(
       id: widget.initialLog?.id ?? 'log-${DateTime.now().millisecondsSinceEpoch}',
+      scheduleId: _selectedScheduleId,
       date: _selectedDate,
       entryTime: entryDateTime,
       exitTime: exitDateTime,
@@ -375,6 +387,16 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final scheduleState = ref.watch(scheduleCalendarProvider);
+    final availableSchedules = [...scheduleState.schedules];
+    if (widget.initialSchedule != null &&
+        !availableSchedules.any((s) => s.id == widget.initialSchedule!.id)) {
+      availableSchedules.add(widget.initialSchedule!);
+    }
+    final effectiveScheduleId = availableSchedules.any((s) => s.id == _selectedScheduleId)
+        ? _selectedScheduleId
+        : null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.initialLog == null ? 'ログを追加' : 'ログを編集'),
@@ -397,6 +419,51 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
               title: '基本情報 & 評価',
               icon: Icons.star_outline,
               children: [
+                // 予定連携ドロップダウン
+                DropdownButtonFormField<String?>(
+                  initialValue: effectiveScheduleId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: '関連する予定（トリップ/ツアー）',
+                    prefixIcon: Icon(Icons.event_outlined),
+                    helperText: '予定を選択すると日付・ポイント・ショップが自動反映されます',
+                  ),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('連携なし（単独ログ）'),
+                    ),
+                    ...availableSchedules.map((s) {
+                      return DropdownMenuItem<String?>(
+                        value: s.id,
+                        child: Text(
+                          '${s.eventDate.month}/${s.eventDate.day} ${s.title}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedScheduleId = val;
+                      if (val != null) {
+                        final matched = availableSchedules
+                            .where((s) => s.id == val)
+                            .firstOrNull;
+                        if (matched != null) {
+                          _selectedDate = matched.eventDate;
+                          if (_locationController.text.trim().isEmpty) {
+                            _locationController.text = matched.destination;
+                          }
+                          if (_diveCenterController.text.trim().isEmpty) {
+                            _diveCenterController.text = matched.diveShop;
+                          }
+                        }
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

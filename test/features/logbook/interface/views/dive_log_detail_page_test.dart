@@ -123,5 +123,21 @@ void main() {
       // 編集画面タイトルが表示されること
       expect(find.text('ログを編集'), findsOneWidget);
     });
+
+    testWidgets('予定連携: scheduleIdがある場合に関連予定チップが表示されること', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      // scheduleId付きログを保存
+      final logWithSchedule = testLog.copyWith(scheduleId: 'sch-1');
+      mockRepo.saveLog(logWithSchedule);
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // 関連予定チップが表示されていること
+      expect(find.textContaining('関連予定:'), findsOneWidget);
+    });
   });
 }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/dive_log.dart';
 import '../controllers/dive_log_controller.dart';
 import 'dive_log_form_page.dart';
+import '../../../schedule/interface/controllers/schedule_controller.dart';
+import '../../../schedule/interface/views/widgets/schedule_detail_sheet.dart';
 
 /// ダイビングログ全情報閲覧用の詳細画面
 class DiveLogDetailPage extends ConsumerWidget {
@@ -126,6 +128,72 @@ class DiveLogDetailPage extends ConsumerWidget {
                           ),
                         ],
                       ),
+                      if (log.scheduleId != null) ...[
+                        Builder(
+                          builder: (context) {
+                            final schedState = ref.watch(scheduleCalendarProvider);
+                            final matchedSchedule = schedState.schedules
+                                .where((s) => s.id == log.scheduleId)
+                                .firstOrNull;
+                            if (matchedSchedule == null) return const SizedBox.shrink();
+
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: InkWell(
+                                onTap: () {
+                                  ScheduleDetailSheet.show(
+                                    context,
+                                    schedule: matchedSchedule,
+                                    onDelete: () {
+                                      ref
+                                          .read(scheduleCalendarProvider.notifier)
+                                          .deleteSchedule(matchedSchedule.id);
+                                    },
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.secondaryContainer
+                                        .withAlpha(150),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: theme.colorScheme.secondary.withAlpha(80),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.event_available,
+                                          size: 16,
+                                          color: theme.colorScheme.secondary),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          '関連予定: ${matchedSchedule.title}',
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color:
+                                                theme.colorScheme.onSecondaryContainer,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(Icons.arrow_forward_ios,
+                                          size: 12,
+                                          color: theme.colorScheme.secondary),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),

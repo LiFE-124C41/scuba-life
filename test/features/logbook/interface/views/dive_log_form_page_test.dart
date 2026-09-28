@@ -5,6 +5,7 @@ import 'package:scuba_life/features/logbook/domain/entities/dive_log.dart';
 import 'package:scuba_life/features/logbook/domain/repositories/dive_log_repository.dart';
 import 'package:scuba_life/features/logbook/interface/controllers/dive_log_controller.dart';
 import 'package:scuba_life/features/logbook/interface/views/dive_log_form_page.dart';
+import 'package:scuba_life/features/schedule/domain/entities/dive_schedule.dart';
 
 class MockDiveLogRepository implements DiveLogRepository {
   final List<DiveLog> storage = [];
@@ -36,13 +37,16 @@ void main() {
       mockRepo = MockDiveLogRepository();
     });
 
-    Widget createTestWidget({DiveLog? initialLog}) {
+    Widget createTestWidget({DiveLog? initialLog, DiveSchedule? initialSchedule}) {
       return ProviderScope(
         overrides: [
           diveLogRepositoryProvider.overrideWithValue(mockRepo),
         ],
         child: MaterialApp(
-          home: DiveLogFormPage(initialLog: initialLog),
+          home: DiveLogFormPage(
+            initialLog: initialLog,
+            initialSchedule: initialSchedule,
+          ),
         ),
       );
     }
@@ -119,6 +123,28 @@ void main() {
       expect(find.text('雲見マリンサービス'), findsOneWidget);
       expect(find.text('木村ダイバー'), findsOneWidget);
       expect(find.text('キンメモドキ'), findsOneWidget);
+    });
+
+    testWidgets('予定連携作成時: 渡された予定の情報（目的地・ショップ名）がフォームに初期入力されていること', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final sched = DiveSchedule(
+        id: 'sched-link-test',
+        title: '伊豆海洋公園ツアー',
+        eventDate: DateTime(2026, 10, 10),
+        destination: '伊豆海洋公園 (IOP)',
+        diveShop: 'オーシャンダイブサービス',
+        plannedDivesCount: 2,
+      );
+
+      await tester.pumpWidget(createTestWidget(initialSchedule: sched));
+      await tester.pumpAndSettle();
+
+      expect(find.text('ログを追加'), findsOneWidget);
+      expect(find.text('伊豆海洋公園 (IOP)'), findsOneWidget);
+      expect(find.text('オーシャンダイブサービス'), findsOneWidget);
     });
   });
 }

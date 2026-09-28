@@ -43,6 +43,7 @@ class DiveLogListNotifier extends AsyncNotifier<List<DiveLog>> {
       final saveLog = ref.read(saveDiveLogUseCaseProvider);
       final initialLog = DiveLog(
         id: 'log-${DateTime.now().millisecondsSinceEpoch}',
+        scheduleId: 'sch-1',
         entryTime: DateTime.now().subtract(const Duration(hours: 2)),
         exitTime: DateTime.now().subtract(const Duration(hours: 1, minutes: 15)),
         location: '伊豆・大瀬崎（湾内）',

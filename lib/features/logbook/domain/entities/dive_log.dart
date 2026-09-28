@@ -3,6 +3,7 @@
 /// 外部フレームワークに一切依存しないPure Dartクラス。
 class DiveLog {
   final String id;
+  final String? scheduleId; // 関連するダイビング予定のID (オプショナル)
   final DateTime date; // 日付
   final DateTime entryTime; // 潜水開始時刻
   final DateTime exitTime; // 潜水終了時刻
@@ -50,6 +51,7 @@ class DiveLog {
 
   DiveLog({
     required this.id,
+    this.scheduleId,
     DateTime? date,
     required this.entryTime,
     required this.exitTime,
@@ -124,5 +126,87 @@ class DiveLog {
     final totalAirConsumedLiters = consumedPressureBar * tankVolumeLiter;
     final avgAtmosphere = 1.0 + (avgDepthMeter / 10.0);
     return totalAirConsumedLiters / (bottomTimeMinutes * avgAtmosphere);
+  }
+
+  DiveLog copyWith({
+    String? id,
+    String? scheduleId,
+    DateTime? date,
+    DateTime? entryTime,
+    DateTime? exitTime,
+    String? location,
+    String? diveCenter,
+    int? rating,
+    String? divePurpose,
+    String? entryMethod,
+    String? waterArea,
+    String? waterType,
+    double? maxDepthMeter,
+    double? avgDepthMeter,
+    double? startPressureBar,
+    double? endPressureBar,
+    double? tankVolumeLiter,
+    String? cylinderMaterial,
+    double? weightKg,
+    double? plannedDepthMeter,
+    int? plannedDurationMinutes,
+    double? plannedReservePressureBar,
+    String? weather,
+    double? airTemp,
+    double? waterTempMin,
+    double? waterTempMax,
+    double? visibilityMeter,
+    String? underwaterCurrent,
+    String? surfaceCurrent,
+    String? tideType,
+    String? highTideTime1,
+    String? lowTideTime1,
+    String? highTideTime2,
+    String? lowTideTime2,
+    List<String>? buddies,
+    List<String>? marineLife,
+    String? equipment,
+    String? notes,
+  }) {
+    return DiveLog(
+      id: id ?? this.id,
+      scheduleId: scheduleId ?? this.scheduleId,
+      date: date ?? this.date,
+      entryTime: entryTime ?? this.entryTime,
+      exitTime: exitTime ?? this.exitTime,
+      location: location ?? this.location,
+      diveCenter: diveCenter ?? this.diveCenter,
+      rating: rating ?? this.rating,
+      divePurpose: divePurpose ?? this.divePurpose,
+      entryMethod: entryMethod ?? this.entryMethod,
+      waterArea: waterArea ?? this.waterArea,
+      waterType: waterType ?? this.waterType,
+      maxDepthMeter: maxDepthMeter ?? this.maxDepthMeter,
+      avgDepthMeter: avgDepthMeter ?? this.avgDepthMeter,
+      startPressureBar: startPressureBar ?? this.startPressureBar,
+      endPressureBar: endPressureBar ?? this.endPressureBar,
+      tankVolumeLiter: tankVolumeLiter ?? this.tankVolumeLiter,
+      cylinderMaterial: cylinderMaterial ?? this.cylinderMaterial,
+      weightKg: weightKg ?? this.weightKg,
+      plannedDepthMeter: plannedDepthMeter ?? this.plannedDepthMeter,
+      plannedDurationMinutes: plannedDurationMinutes ?? this.plannedDurationMinutes,
+      plannedReservePressureBar: plannedReservePressureBar ?? this.plannedReservePressureBar,
+      weather: weather ?? this.weather,
+      airTemp: airTemp ?? this.airTemp,
+      waterTempMin: waterTempMin ?? this.waterTempMin,
+      waterTempMax: waterTempMax ?? this.waterTempMax,
+      visibilityMeter: visibilityMeter ?? this.visibilityMeter,
+      underwaterCurrent: underwaterCurrent ?? this.underwaterCurrent,
+      surfaceCurrent: surfaceCurrent ?? this.surfaceCurrent,
+      tideType: tideType ?? this.tideType,
+      highTideTime1: highTideTime1 ?? this.highTideTime1,
+      lowTideTime1: lowTideTime1 ?? this.lowTideTime1,
+      highTideTime2: highTideTime2 ?? this.highTideTime2,
+      lowTideTime2: lowTideTime2 ?? this.lowTideTime2,
+      buddies: buddies ?? this.buddies,
+      marineLife: marineLife ?? this.marineLife,
+      equipment: equipment ?? this.equipment,
+      notes: notes ?? this.notes,
+    );
   }
 }

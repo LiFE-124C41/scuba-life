@@ -103,6 +103,32 @@ void main() {
       expect(log.weightKg, equals(5.0));
     });
 
+    test('scheduleId: 予定IDが正しく保持され、copyWithで更新できること', () {
+      // Arrange
+      final log = DiveLog(
+        id: 'test-sched',
+        scheduleId: 'sch-100',
+        entryTime: baseEntryTime,
+        exitTime: baseExitTime,
+        location: '伊豆海洋公園',
+        maxDepthMeter: 18.0,
+        avgDepthMeter: 10.0,
+        startPressureBar: 200,
+        endPressureBar: 50,
+      );
+
+      // Assert
+      expect(log.scheduleId, equals('sch-100'));
+
+      // Act: copyWith
+      final updated = log.copyWith(scheduleId: 'sch-200', location: '大瀬崎');
+
+      // Assert
+      expect(updated.scheduleId, equals('sch-200'));
+      expect(updated.location, equals('大瀬崎'));
+      expect(updated.id, equals('test-sched'));
+    });
+
     test('異常系: エントリー時刻がエグジット時刻より後の場合、ArgumentErrorが発生すること', () {
       expect(
         () => DiveLog(

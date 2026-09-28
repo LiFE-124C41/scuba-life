@@ -19,10 +19,23 @@
   - 水面空気消費率（Surface Air Consumption Rate: $L/\text{min}$）を自動算出。
   - 計算式: $\text{SAC} = \frac{\Delta P \times V_{\text{tank}}}{T_{\text{bottom}} \times (1 + D_{\text{avg}} / 10)}$
   - 自身のエア消費効率を可視化し、安全管理やスキルアップ指標として活用可能。
+- **予定管理との双方向連携**:
+  - ログ詳細画面（`DiveLogDetailPage`）に関連予定のリンクチップを表示し、ワンタップで予定詳細を展開。
+  - ログ作成フォーム（`DiveLogFormPage`）で登録済み予定を選択すると、日程・ポイント・ショップ名を自動補完。
 
 ### 2. ダイビングスケジュール管理（Schedule）
-- **トリップ・ツアー計画**: 今後のダイビング予定、目的地、利用ショップ、予定本数を一元管理。
-- **リマインダー・メモ**: 必要な器材（ドライスーツ、ドリフトマーカーなど）や集合場所の事前メモ。
+- **月間カレンダー表示（`CalendarView`）**:
+  - 月ごとのカレンダーグリッドで予定を直感的に俯瞰。予定のある日にはドットインジケーターを表示。
+  - 前月・次月への移動や「今日」へのワンタップジャンプに対応。
+- **日付選択と予定一覧連携**:
+  - カレンダー上の日付を選択すると、その日に予定されているダイビングトリップがカード形式で即座に表示。
+- **予定詳細モーダル（`ScheduleDetailSheet`）**:
+  - 予定カードのタップでボトムシートが展開し、目的地・ショップ・予定本数・準備メモ・削除などの詳細を網羅して確認可能。
+- **ログブックとの相互連携 & ログ記録導線**:
+  - 予定に紐付く記録済みログ一覧（本数・最大深度・潜水時間・評価）をシート内で直接確認可能。
+  - 「この予定からログを記録する」ボタンから、予定情報（日程・ポイント・ショップ名・ID）を引き継いで新規ログフォームを起動可能。
+- **予定追加ダイアログ（`ScheduleFormDialog`）**:
+  - カレンダー上で選択された日付を初期値として、タイトルやポイント、ショップ、本数を簡単に追加登録可能。
 
 ### 3. 海況・海洋気象情報（Weather）
 - **スポット別海洋コンディション**: 気温・水温だけでなく、ダイバーにとって死活問題となる「波高」「風向・風速」「潮回り」「予想透明度」を表示。
@@ -76,11 +89,24 @@ lib/
 │   │   │       └── dive_log_form_page.dart   # ログ作成・編集フォーム
 │   │   └── infrastructure/                 # インフラ層（データ永続化実装、外部連携）
 │   │       └── repositories/in_memory_dive_log_repository.dart
-│   ├── schedule/                           # ② スケジュール管理機能
+│   ├── schedule/                           # ② スケジュール管理機能（カレンダーUI）
 │   │   ├── domain/
+│   │   │   ├── entities/dive_schedule.dart
+│   │   │   └── repositories/dive_schedule_repository.dart
 │   │   ├── usecase/
-│   │   ├── interface/                      # controllers, views
+│   │   │   ├── get_dive_schedules.dart
+│   │   │   ├── add_dive_schedule.dart
+│   │   │   └── delete_dive_schedule.dart
+│   │   ├── interface/                      # UI・状態管理
+│   │   │   ├── controllers/schedule_controller.dart # NotifierProvider (月移動・日付選択・一覧抽出)
+│   │   │   └── views/
+│   │   │       ├── schedule_page.dart      # カレンダーメイン画面
+│   │   │       └── widgets/
+│   │   │           ├── calendar_view.dart  # 月間カレンダーグリッド
+│   │   │           ├── schedule_detail_sheet.dart # 予定詳細ボトムシート
+│   │   │           └── schedule_form_dialog.dart  # 予定追加ダイアログ
 │   │   └── infrastructure/
+│   │       └── repositories/in_memory_dive_schedule_repository.dart
 │   ├── weather/                            # ③ 海況・気象予報機能
 │   │   ├── domain/
 │   │   ├── usecase/
