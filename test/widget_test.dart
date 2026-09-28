@@ -1,9 +1,14 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scuba_life/app/app.dart';
 
 void main() {
   testWidgets('ScubaLifeApp smoke test - 初期画面の描画確認', (WidgetTester tester) async {
-    await tester.pumpWidget(const ScubaLifeApp());
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: ScubaLifeApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // ログブックのタイトルが表示されていることを確認

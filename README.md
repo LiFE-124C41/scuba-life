@@ -30,15 +30,16 @@
 
 ## 🏛️ アーキテクチャ設計
 
-本プロジェクトでは**クリーンアーキテクチャ（Clean Architecture）**と**Feature-First（機能単位分割）**を組み合わせた構成を採用しています。
+本プロジェクトでは**クリーンアーキテクチャ（Clean Architecture）**と**Feature-First（機能単位分割）**、および状態管理・DI基盤として**Flutter Riverpod**を組み合わせた構成を採用しています。
 
 ### 設計方針
 1. **依存関係の単方向性（内側への依存）**:
-   - `domain`（最内層: Pure Dart） $\leftarrow$ `usecase`（Pure Dart） $\leftarrow$ `interface` (UI/State) / `infrastructure` (外部DB/API)
+   - `domain`（最内層: Pure Dart） $\leftarrow$ `usecase`（Pure Dart） $\leftarrow$ `interface` (UI/Riverpod Notifier) / `infrastructure` (外部DB/API)
 2. **フレームワーク非依存のビジネスロジック**:
-   - ダイビング物理計算（SACレート等）やバリデーションは、Flutter SDKやUIパッケージに一切依存しないPure Dartとしてドメイン層にカプセル化。
+   - ダイビング物理計算（SACレート等）やバリデーションは、Flutter SDKやRiverpodに一切依存しないPure Dartとしてドメイン層にカプセル化。
+   - `Riverpod` はプレゼンテーション層（`interface`）のUI状態管理および依存性注入（DI: Dependency Injection）としてのみ利用し、ドメイン・ユースケースへのフレームワーク侵入を防止。
 3. **拡張性と保守性**:
-   - データ層はリポジトリインターフェース（抽象）を挟むことで、インメモリ $\rightarrow$ SQLite (sqflite / Drift) / Isar / Firebase への差し替えが容易。
+   - データ層はリポジトリインターフェース（抽象）を挟むことで、インメモリ $\rightarrow$ SQLite (sqflite / Drift) / Isar / Firebase への差し替えが容易。テスト時も `ProviderContainer(overrides: [...])` で容易にモック化可能。
 
 ---
 
@@ -61,36 +62,38 @@ lib/
 │   │   ├── usecase/                        # ユースケース層（アプリケーションロジック）
 │   │   │   ├── get_dive_logs.dart
 │   │   │   └── save_dive_log.dart
-│   │   ├── interface/                      # インターフェース層（UI、Controller）
-│   │   │   └── views/dive_log_page.dart
+│   │   ├── interface/                      # インターフェース層（UI、Riverpod Controller）
+│   │   │   ├── controllers/dive_log_controller.dart  # AsyncNotifier, DI Providers
+│   │   │   └── views/dive_log_page.dart              # ConsumerWidget
 │   │   └── infrastructure/                 # インフラ層（データ永続化実装、外部連携）
 │   │       └── repositories/in_memory_dive_log_repository.dart
 │   ├── schedule/                           # ② スケジュール管理機能
 │   │   ├── domain/
 │   │   ├── usecase/
-│   │   ├── interface/
+│   │   ├── interface/                      # controllers, views
 │   │   └── infrastructure/
 │   ├── weather/                            # ③ 海況・気象予報機能
 │   │   ├── domain/
 │   │   ├── usecase/
-│   │   ├── interface/
+│   │   ├── interface/                      # controllers, views
 │   │   └── infrastructure/
 │   └── gear_sale/                          # ④ 機材セール情報機能
 │       ├── domain/
 │       ├── usecase/
-│       ├── interface/
+│       ├── interface/                      # controllers, views
 │       └── infrastructure/
-└── main.dart                               # エントリーポイント
+└── main.dart                               # エントリーポイント (ProviderScope)
 ```
 
 ---
 
 ## 🧪 テスト方針
 
-ロジック層（Domain / UseCase）を対象としたユニットテストを重視しています。
+ロジック層（Domain / UseCase）およびRiverpodコントローラーを対象としたユニットテストを重視しています。
 
 - **Domain層のテスト**: SAC計算ロジック、潜水時間の計算、異常系バリデーション（`ArgumentError`）の検証。
 - **UseCase層のテスト**: リポジトリのインターフェースをモック（Mock/Fake）化し、外部依存を切り離した上でビジネスフローを **Arrange / Act / Assert** 形式で検証。
+- **Riverpod Controllerのテスト**: `ProviderContainer` と `overrideWithValue` を活用し、UIを起動することなくNotifierの状態遷移（ローディング・追加・エラーハンドリング）を検証。
 
 ### テスト実行方法
 ```bash
