@@ -149,5 +149,48 @@ void main() {
       expect(updated.memo, contains('ショップOH完了'));
       expect(updated.calculateStatus(now), equals(OverhaulStatus.good));
     });
+
+    test('【incrementGearDives】指定した複数機材のダイブ本数がNotifier経由でインクリメントされること', () async {
+      // Arrange
+      mockRepo.items.addAll([sampleGear1, sampleGear2]);
+      await container.read(gearListNotifierProvider.notifier).loadGear();
+
+      expect(container.read(gearListNotifierProvider).allItems[0].divesSinceOverhaul, equals(0));
+      expect(container.read(gearListNotifierProvider).allItems[1].divesSinceOverhaul, equals(0));
+
+      // Act
+      await container
+          .read(gearListNotifierProvider.notifier)
+          .incrementGearDives(['gear-1', 'gear-2']);
+
+      // Assert
+      final state = container.read(gearListNotifierProvider);
+      final g1 = state.allItems.firstWhere((g) => g.id == 'gear-1');
+      final g2 = state.allItems.firstWhere((g) => g.id == 'gear-2');
+
+      expect(g1.divesSinceOverhaul, equals(1));
+      expect(g2.divesSinceOverhaul, equals(1));
+    });
+
+    test('【decrementGearDives】指定した複数機材のダイブ本数がNotifier経由でデクリメントされること', () async {
+      // Arrange: それぞれ2本潜水済みの機材
+      final gearWithDives1 = sampleGear1.copyWith(divesSinceOverhaul: 2);
+      final gearWithDives2 = sampleGear2.copyWith(divesSinceOverhaul: 5);
+      mockRepo.items.addAll([gearWithDives1, gearWithDives2]);
+      await container.read(gearListNotifierProvider.notifier).loadGear();
+
+      // Act
+      await container
+          .read(gearListNotifierProvider.notifier)
+          .decrementGearDives(['gear-1', 'gear-2']);
+
+      // Assert: それぞれ -1 されること
+      final state = container.read(gearListNotifierProvider);
+      final g1 = state.allItems.firstWhere((g) => g.id == 'gear-1');
+      final g2 = state.allItems.firstWhere((g) => g.id == 'gear-2');
+
+      expect(g1.divesSinceOverhaul, equals(1));
+      expect(g2.divesSinceOverhaul, equals(4));
+    });
   });
 }

@@ -3,8 +3,10 @@ import '../../../../core/usecase/usecase.dart';
 import '../../domain/entities/gear_item.dart';
 import '../../domain/repositories/gear_repository.dart';
 import '../../infrastructure/repositories/in_memory_gear_repository.dart';
+import '../../usecase/decrement_gear_dives.dart';
 import '../../usecase/delete_gear_item.dart';
 import '../../usecase/get_gear_items.dart';
+import '../../usecase/increment_gear_dives.dart';
 import '../../usecase/record_overhaul.dart';
 import '../../usecase/save_gear_item.dart';
 
@@ -32,6 +34,16 @@ final deleteGearItemUseCaseProvider = Provider<DeleteGearItem>((ref) {
 final recordOverhaulUseCaseProvider = Provider<RecordOverhaul>((ref) {
   final repo = ref.watch(gearRepositoryProvider);
   return RecordOverhaul(repo);
+});
+
+final incrementGearDivesUseCaseProvider = Provider<IncrementGearDives>((ref) {
+  final repo = ref.watch(gearRepositoryProvider);
+  return IncrementGearDives(repo);
+});
+
+final decrementGearDivesUseCaseProvider = Provider<DecrementGearDives>((ref) {
+  final repo = ref.watch(gearRepositoryProvider);
+  return DecrementGearDives(repo);
 });
 
 /// 機材管理画面の状態クラス
@@ -146,6 +158,28 @@ class GearListNotifier extends Notifier<GearListState> {
       );
       await loadGear();
       return updated;
+    } catch (e) {
+      state = state.copyWith(error: e);
+      rethrow;
+    }
+  }
+
+  Future<void> incrementGearDives(List<String> gearIds) async {
+    try {
+      final incrementUseCase = ref.read(incrementGearDivesUseCaseProvider);
+      await incrementUseCase(gearIds);
+      await loadGear();
+    } catch (e) {
+      state = state.copyWith(error: e);
+      rethrow;
+    }
+  }
+
+  Future<void> decrementGearDives(List<String> gearIds) async {
+    try {
+      final decrementUseCase = ref.read(decrementGearDivesUseCaseProvider);
+      await decrementUseCase(gearIds);
+      await loadGear();
     } catch (e) {
       state = state.copyWith(error: e);
       rethrow;

@@ -200,5 +200,82 @@ void main() {
       expect(updatedGear.memo, contains('1stステージOリング全交換'));
       expect(updatedGear.calculateStatus(newOHDate), equals(OverhaulStatus.good));
     });
+
+    test('【ダイブ本数インクリメント】incrementDives実行時、潜水本数が加算され、規定値到達時にステータスが遷移すること', () {
+      // Arrange: 89本潜水済みのレギュレーター（推奨本数100本）
+      final gear = GearItem(
+        id: 'gear-1',
+        name: 'レギュレーター',
+        category: GearCategory.regulator,
+        purchaseDate: DateTime(2026, 1, 1),
+        lastOverhaulDate: DateTime(2026, 1, 1),
+        overhaulIntervalMonths: 12,
+        overhaulIntervalDives: 100,
+        divesSinceOverhaul: 89,
+      );
+
+      // 89本時点（残り11本）では good
+      final checkDate = DateTime(2026, 3, 1);
+      expect(gear.calculateStatus(checkDate), equals(OverhaulStatus.good));
+
+      // Act: 1本インクリメント（90本到達、残り10本）
+      final incrementedOnce = gear.incrementDives();
+
+      // Assert: 90本になり、残り10本以下となったため warning に遷移すること
+      expect(incrementedOnce.divesSinceOverhaul, equals(90));
+      expect(incrementedOnce.calculateStatus(checkDate), equals(OverhaulStatus.warning));
+
+      // Act: さらに10本インクリメント（100本到達、残り0本）
+      final incrementedToOverdue = incrementedOnce.incrementDives(10);
+
+      // Assert: 100本になり、overdue に遷移すること
+      expect(incrementedToOverdue.divesSinceOverhaul, equals(100));
+      expect(incrementedToOverdue.calculateStatus(checkDate), equals(OverhaulStatus.overdue));
+
+      // 0以下のカウントを指定した場合は変化しないこと
+      final noChange = incrementedToOverdue.incrementDives(0);
+      expect(noChange.divesSinceOverhaul, equals(100));
+    });
+
+    test('【ダイブ本数デクリメント】decrementDives実行時、潜水本数が減算され、0未満にならずステータスが回復すること', () {
+      // Arrange: 100本潜水済みで overdue 状態のレギュレーター（推奨本数100本）
+      final gear = GearItem(
+        id: 'gear-1',
+        name: 'レギュレーター',
+        category: GearCategory.regulator,
+        purchaseDate: DateTime(2026, 1, 1),
+        lastOverhaulDate: DateTime(2026, 1, 1),
+        overhaulIntervalMonths: 12,
+        overhaulIntervalDives: 100,
+        divesSinceOverhaul: 100,
+      );
+
+      final checkDate = DateTime(2026, 3, 1);
+      expect(gear.calculateStatus(checkDate), equals(OverhaulStatus.overdue));
+
+      // Act: 1本デクリメント（99本になり、残り1本で warning に回復）
+      final decrementedOnce = gear.decrementDives();
+
+      // Assert
+      expect(decrementedOnce.divesSinceOverhaul, equals(99));
+      expect(decrementedOnce.calculateStatus(checkDate), equals(OverhaulStatus.warning));
+
+      // Act: さらに10本デクリメント（89本になり、残り11本で good に回復）
+      final decrementedToGood = decrementedOnce.decrementDives(10);
+
+      // Assert
+      expect(decrementedToGood.divesSinceOverhaul, equals(89));
+      expect(decrementedToGood.calculateStatus(checkDate), equals(OverhaulStatus.good));
+
+      // Act: 100本減算（0本以下にならず0本で停止すること）
+      final zeroDives = decrementedToGood.decrementDives(100);
+
+      // Assert
+      expect(zeroDives.divesSinceOverhaul, equals(0));
+
+      // 0以下のカウントを指定した場合は変化しないこと
+      final noChange = zeroDives.decrementDives(0);
+      expect(noChange.divesSinceOverhaul, equals(0));
+    });
   });
 }

@@ -7,6 +7,8 @@ import '../../../schedule/interface/controllers/schedule_controller.dart';
 import '../../../schedule/interface/views/widgets/schedule_detail_sheet.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../dive_spot/interface/views/widgets/spot_map_widget.dart';
+import '../../../my_gear/domain/entities/gear_item.dart';
+import '../../../my_gear/interface/controllers/gear_controller.dart';
 
 /// ダイビングログ全情報閲覧用の詳細画面
 class DiveLogDetailPage extends ConsumerWidget {
@@ -387,6 +389,50 @@ class DiveLogDetailPage extends ConsumerWidget {
                       _buildSimpleInfo('ウェイト', log.weightKg != null ? '${log.weightKg} kg' : '-'),
                     ],
                   ),
+                  Builder(
+                    builder: (context) {
+                      final gearState = ref.watch(gearListNotifierProvider);
+                      final selectedGears = gearState.allItems
+                          .where((g) => log.selectedGearIds.contains(g.id))
+                          .toList();
+
+                      if (selectedGears.isEmpty) return const SizedBox.shrink();
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Divider(height: 20),
+                          const Row(
+                            children: [
+                              Icon(Icons.inventory_2_outlined, size: 16, color: Color(0xFF0077B6)),
+                              SizedBox(width: 6),
+                              Text(
+                                '使用マイ機材:',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0077B6),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: selectedGears.map((g) {
+                              return Chip(
+                                visualDensity: VisualDensity.compact,
+                                avatar: Icon(_getCategoryIcon(g.category), size: 14),
+                                label: Text(g.name, style: const TextStyle(fontSize: 11)),
+                                backgroundColor: Colors.blue.shade50,
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                   if (log.equipment.isNotEmpty) ...[
                     const Divider(height: 20),
                     Row(
@@ -551,5 +597,22 @@ class DiveLogDetailPage extends ConsumerWidget {
         Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
       ],
     );
+  }
+
+  IconData _getCategoryIcon(GearCategory category) {
+    switch (category) {
+      case GearCategory.regulator:
+        return Icons.water;
+      case GearCategory.bcd:
+        return Icons.shield;
+      case GearCategory.diveComputer:
+        return Icons.watch;
+      case GearCategory.suit:
+        return Icons.accessibility_new;
+      case GearCategory.maskSnorkelFin:
+        return Icons.visibility;
+      case GearCategory.accessories:
+        return Icons.flash_on;
+    }
   }
 }

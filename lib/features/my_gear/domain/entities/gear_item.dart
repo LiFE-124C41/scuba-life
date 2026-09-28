@@ -145,6 +145,23 @@ class GearItem {
     );
   }
 
+  /// ダイブ本数をインクリメントして新しいインスタンスを生成
+  GearItem incrementDives([int count = 1]) {
+    if (count <= 0) return this;
+    return copyWith(
+      divesSinceOverhaul: divesSinceOverhaul + count,
+    );
+  }
+
+  /// ダイブ本数をデクリメントして新しいインスタンスを生成（0未満にはならない）
+  GearItem decrementDives([int count = 1]) {
+    if (count <= 0) return this;
+    final newCount = divesSinceOverhaul - count;
+    return copyWith(
+      divesSinceOverhaul: newCount < 0 ? 0 : newCount,
+    );
+  }
+
   GearItem copyWith({
     String? id,
     String? name,

@@ -49,7 +49,8 @@ class DiveLog {
   // メンバー・機材・生物・メモ
   final List<String> buddies; // バディ名（複数）
   final List<String> marineLife; // 出会った生物
-  final String equipment; // 使用した機材
+  final List<String> selectedGearIds; // 機材管理から選択された機材ID一覧
+  final String equipment; // 使用した機材（自由記述または選択機材名）
   final String notes; // メモ
 
   DiveLog({
@@ -92,6 +93,7 @@ class DiveLog {
     this.lowTideTime2,
     this.buddies = const [],
     this.marineLife = const [],
+    this.selectedGearIds = const [],
     this.equipment = '',
     this.notes = '',
   }) : date = date ?? DateTime(entryTime.year, entryTime.month, entryTime.day) {
@@ -180,6 +182,7 @@ class DiveLog {
     String? lowTideTime2,
     List<String>? buddies,
     List<String>? marineLife,
+    List<String>? selectedGearIds,
     String? equipment,
     String? notes,
   }) {
@@ -223,6 +226,7 @@ class DiveLog {
       lowTideTime2: lowTideTime2 ?? this.lowTideTime2,
       buddies: buddies ?? this.buddies,
       marineLife: marineLife ?? this.marineLife,
+      selectedGearIds: selectedGearIds ?? this.selectedGearIds,
       equipment: equipment ?? this.equipment,
       notes: notes ?? this.notes,
     );

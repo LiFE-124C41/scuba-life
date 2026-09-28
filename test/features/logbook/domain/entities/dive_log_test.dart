@@ -227,5 +227,29 @@ void main() {
         throwsArgumentError,
       );
     });
+
+    test('選択された機材ID一覧（selectedGearIds）が正しく保持され、copyWithで更新できること', () {
+      // Arrange & Act
+      final log = DiveLog(
+        id: 'gear-test-log',
+        entryTime: baseEntryTime,
+        exitTime: baseExitTime,
+        maxDepthMeter: 18.0,
+        avgDepthMeter: 10.0,
+        startPressureBar: 200,
+        endPressureBar: 50,
+        location: '大瀬崎',
+        selectedGearIds: ['gear-1', 'gear-2'],
+      );
+
+      // Assert
+      expect(log.selectedGearIds, equals(['gear-1', 'gear-2']));
+
+      // Act (copyWith)
+      final updated = log.copyWith(selectedGearIds: ['gear-1', 'gear-2', 'gear-3']);
+
+      // Assert
+      expect(updated.selectedGearIds, equals(['gear-1', 'gear-2', 'gear-3']));
+    });
   });
 }

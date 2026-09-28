@@ -5,6 +5,8 @@ import '../controllers/dive_log_controller.dart';
 import '../../../schedule/domain/entities/dive_schedule.dart';
 import '../../../schedule/interface/controllers/schedule_controller.dart';
 import '../../../dive_spot/interface/views/dive_spot_select_modal.dart';
+import '../../../my_gear/domain/entities/gear_item.dart';
+import '../../../my_gear/interface/controllers/gear_controller.dart';
 
 /// ダイビングログ新規作成・編集用フルスクリーンフォーム画面
 class DiveLogFormPage extends ConsumerStatefulWidget {
@@ -33,6 +35,9 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
   late String _divePurpose;
   late String _entryMethod;
   late String _waterArea;
+
+  // 機材連携
+  final List<String> _selectedGearIds = [];
   late String _waterType;
 
   late TextEditingController _locationController;
@@ -146,12 +151,13 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
     _highTide2Controller = TextEditingController(text: log?.highTideTime2 ?? '18:50');
     _lowTide2Controller = TextEditingController(text: log?.lowTideTime2 ?? '00:30');
 
-    _equipmentController = TextEditingController(text: log?.equipment ?? '5mmウェットスーツ, フードベスト');
+    _equipmentController = TextEditingController(text: log?.equipment ?? '');
     _notesController = TextEditingController(text: log?.notes ?? '');
 
     if (log != null) {
       _buddies.addAll(log.buddies);
       _marineLife.addAll(log.marineLife);
+      _selectedGearIds.addAll(log.selectedGearIds);
     }
   }
 
@@ -248,6 +254,31 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
     }
   }
 
+  void _syncEquipmentController(List<GearItem> allGear) {
+    final selectedNames = allGear
+        .where((g) => _selectedGearIds.contains(g.id))
+        .map((g) => g.name)
+        .toList();
+    _equipmentController.text = selectedNames.join(', ');
+  }
+
+  IconData _getCategoryIcon(GearCategory category) {
+    switch (category) {
+      case GearCategory.regulator:
+        return Icons.water;
+      case GearCategory.bcd:
+        return Icons.shield;
+      case GearCategory.diveComputer:
+        return Icons.watch;
+      case GearCategory.suit:
+        return Icons.accessibility_new;
+      case GearCategory.maskSnorkelFin:
+        return Icons.visibility;
+      case GearCategory.accessories:
+        return Icons.flash_on;
+    }
+  }
+
   void _saveForm() {
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -304,6 +335,8 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
       return;
     }
 
+    final isNewLog = widget.initialLog == null;
+
     final newLog = DiveLog(
       id: widget.initialLog?.id ?? 'log-${DateTime.now().millisecondsSinceEpoch}',
       scheduleId: _selectedScheduleId,
@@ -344,11 +377,36 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
       lowTideTime2: _lowTide2Controller.text.trim().isNotEmpty ? _lowTide2Controller.text.trim() : null,
       buddies: List.unmodifiable(_buddies),
       marineLife: List.unmodifiable(_marineLife),
+      selectedGearIds: List.unmodifiable(_selectedGearIds),
       equipment: _equipmentController.text.trim(),
       notes: _notesController.text.trim(),
     );
 
     ref.read(diveLogListProvider.notifier).addLog(newLog);
+
+    // 機材管理との連携（ダイブ本数のインクリメント／デクリメント）
+    if (isNewLog) {
+      if (_selectedGearIds.isNotEmpty) {
+        // 新規作成時は選択されたすべての機材のダイブ本数をインクリメント
+        ref.read(gearListNotifierProvider.notifier).incrementGearDives(_selectedGearIds);
+      }
+    } else {
+      final previousGearIds = widget.initialLog?.selectedGearIds ?? [];
+
+      // 編集時: 新たに追加選択された機材はインクリメント
+      final newlyAddedGearIds =
+          _selectedGearIds.where((id) => !previousGearIds.contains(id)).toList();
+      if (newlyAddedGearIds.isNotEmpty) {
+        ref.read(gearListNotifierProvider.notifier).incrementGearDives(newlyAddedGearIds);
+      }
+
+      // 編集時: 以前選択されていたが今回解除された機材はデクリメント（本数を戻す）
+      final removedGearIds =
+          previousGearIds.where((id) => !_selectedGearIds.contains(id)).toList();
+      if (removedGearIds.isNotEmpty) {
+        ref.read(gearListNotifierProvider.notifier).decrementGearDives(removedGearIds);
+      }
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('ダイビングログを保存しました')),
@@ -398,6 +456,7 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
     final theme = Theme.of(context);
 
     final scheduleState = ref.watch(scheduleCalendarProvider);
+    final gearState = ref.watch(gearListNotifierProvider);
     final availableSchedules = [...scheduleState.schedules];
     if (widget.initialSchedule != null &&
         !availableSchedules.any((s) => s.id == widget.initialSchedule!.id)) {
@@ -1014,12 +1073,113 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                const Divider(height: 1),
                 const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.inventory_2_outlined, size: 18, color: theme.colorScheme.primary),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'マイ機材から選択',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                    if (gearState.allItems.isNotEmpty)
+                      Text(
+                        '選択中: ${_selectedGearIds.length}点',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  '選択した機材はログ保存時にOH後ダイブ本数が+1されます',
+                  style: TextStyle(fontSize: 11, color: Colors.black54),
+                ),
+                const SizedBox(height: 10),
+                if (gearState.isLoading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else if (gearState.allItems.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.grey),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '機材管理に機材が登録されていません。「機材管理」タブからマイ機材を登録するとここで選択できます。',
+                            style: TextStyle(fontSize: 12, color: Colors.black87),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: gearState.allItems.map((gear) {
+                      final isSelected = _selectedGearIds.contains(gear.id);
+                      final status = gear.calculateStatus();
+                      return FilterChip(
+                        selected: isSelected,
+                        avatar: Icon(
+                          isSelected ? Icons.check : _getCategoryIcon(gear.category),
+                          size: 16,
+                          color: isSelected
+                              ? Colors.white
+                              : (status == OverhaulStatus.overdue ? Colors.red : null),
+                        ),
+                        label: Text(
+                          gear.name,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        selectedColor: theme.colorScheme.primary,
+                        checkmarkColor: Colors.white,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black87,
+                        ),
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedGearIds.add(gear.id);
+                            } else {
+                              _selectedGearIds.remove(gear.id);
+                            }
+                            _syncEquipmentController(gearState.allItems);
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _equipmentController,
                   decoration: const InputDecoration(
-                    labelText: '使用機材',
-                    hintText: '例: 5mmウェットスーツ, フードベスト, スントD5',
+                    labelText: '使用機材メモ・その他機材（手入力）',
+                    hintText: '例: 5mmウェットスーツ, フードベスト, スントD5 (自由記述・レンタル品等)',
                     prefixIcon: Icon(Icons.backpack_outlined),
                   ),
                 ),
