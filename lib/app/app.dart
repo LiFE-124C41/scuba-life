@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../features/logbook/interface/views/dive_log_page.dart';
+import '../features/marine_life/interface/views/marine_life_page.dart';
 import '../features/my_gear/interface/views/my_gear_page.dart';
 import '../features/schedule/interface/views/schedule_page.dart';
 
@@ -35,6 +36,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _pages = const [
     DiveLogPage(),
+    MarineLifePage(),
     SchedulePage(),
     MyGearPage(),
   ];
@@ -55,6 +57,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             icon: Icon(Icons.book_outlined),
             selectedIcon: Icon(Icons.book),
             label: 'ログブック',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.set_meal_outlined),
+            selectedIcon: Icon(Icons.set_meal),
+            label: '生き物図鑑',
           ),
           NavigationDestination(
             icon: Icon(Icons.calendar_today_outlined),
