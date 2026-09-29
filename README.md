@@ -28,6 +28,13 @@
   - ログ保存時に、新たに選択された機材のオーバーホール後潜水本数が自動的に `+1` インクリメントされ、OH目安（残り本数や状態ステータス）がリアルタイムに更新。
   - ログ編集で機材の選択を解除して保存した場合、誤加算防止のため当該機材のダイブ本数を自動で `-1` デクリメント（巻き戻し）処理。
   - ログ詳細画面（`DiveLogDetailPage`）に使用したマイ機材をカテゴリバッジ付きチップで表示。
+- **インストラクター向けダイバー統計・スキルシート表示（`DiveLogStatisticsPage`, `DiveLogSummaryCard`）**:
+  - 初めて訪れるダイビングサービスやインストラクターに自身の経験レベル・ブランク状況をスムーズに提示できる専用統計機能。
+  - **ログ一覧サマリーカード**: 画面最上部に「総本数・最大水深・累計潜水時間・ブランク日数ステータス」を常時表示し、タップで詳細統計へシームレスに遷移。
+  - **スキル & 安全プロファイル**: 最大経験水深、平均最大水深、平均潜水時間、平均SACレート（水面空気消費率/エア燃費の目安）を集約。
+  - **ダイブスタイル & 環境適性**: ボート vs ビーチのエントリー比率（ビジュアル進捗バー）、潮流・ドリフトダイビングの経験度（強・中・弱・なしの経験本数）を一覧化。
+  - **ブランク状態の自動判定**: 最終潜水日からの経過日数を基に「アクティブ（好調）」「標準」「軽度ブランク」「ブランクあり（要リフレッシュ）」をバッジ表示。
+  - **直近の潜水実績**: 最新3件のログダイジェスト（日付・ポイント・最大深度・時間・海況）を表示し、直近のコンディションを即座に共有可能。
 - **ポイント地図表示 & マップビュー切替**:
   - ログ一覧画面（`DiveLogPage`）上部のアイコンから「リスト表示」と「マップ表示」をワンタップで切り替え可能。
   - マップ表示では全ログのダイビングポイントが地図（OpenStreetMap）上にピン表示され、ピンタップで概要カードおよび詳細画面へ遷移可能。
@@ -112,16 +119,23 @@ lib/
 │   ├── logbook/                            # ① ログブック機能
 │   │   ├── domain/                         # ドメイン層（エンティティ、リポジトリIF）
 │   │   │   ├── entities/dive_log.dart
+│   │   │   ├── entities/dive_statistics.dart # ダイバー統計・スキルシートモデル
 │   │   │   └── repositories/dive_log_repository.dart
 │   │   ├── usecase/                        # ユースケース層（アプリケーションロジック）
 │   │   │   ├── get_dive_logs.dart
-│   │   │   └── save_dive_log.dart
+│   │   │   ├── get_dive_statistics.dart    # 統計指標集計ユースケース
+│   │   │   ├── save_dive_log.dart
+│   │   │   └── delete_dive_log.dart
 │   │   ├── interface/                      # インターフェース層（UI、Riverpod Controller）
-│   │   │   ├── controllers/dive_log_controller.dart  # AsyncNotifier, DI Providers
+│   │   │   ├── controllers/dive_log_controller.dart
+│   │   │   ├── controllers/dive_statistics_controller.dart # 統計Provider
 │   │   │   └── views/
-│   │   │       ├── dive_log_page.dart        # ログ一覧（コンパクト2行表示）
-│   │   │       ├── dive_log_detail_page.dart # ログ詳細（全情報閲覧・編集遷移）
-│   │   │       └── dive_log_form_page.dart   # ログ作成・編集フォーム
+│   │   │       ├── dive_log_page.dart            # ログ一覧（サマリーカード付き）
+│   │   │       ├── dive_log_statistics_page.dart # ダイバー統計・スキルシート画面
+│   │   │       ├── dive_log_detail_page.dart     # ログ詳細
+│   │   │       ├── dive_log_form_page.dart       # ログ作成・編集フォーム
+│   │   │       └── widgets/
+│   │   │           └── dive_log_summary_card.dart# 一覧上部サマリーカード
 │   │   └── infrastructure/                 # インフラ層（データ永続化実装、外部連携）
 │   │       └── repositories/in_memory_dive_log_repository.dart
 │   ├── schedule/                           # ② スケジュール管理機能（カレンダーUI）
