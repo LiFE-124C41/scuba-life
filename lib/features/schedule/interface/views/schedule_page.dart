@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../dive_spot/interface/views/widgets/spot_map_widget.dart';
+import '../../../my_gear/interface/controllers/gear_controller.dart';
 import '../../domain/entities/dive_schedule.dart';
 import '../controllers/schedule_controller.dart';
 import 'widgets/calendar_view.dart';
@@ -482,22 +483,81 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: colorScheme.secondaryContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '${item.plannedDivesCount}ダイブ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSecondaryContainer,
-                            ),
-                          ),
-                        ),
                       ],
+                    ),
+                    const SizedBox(height: 6),
+                    Builder(
+                      builder: (context) {
+                        final allRegisteredGears = ref.watch(gearListNotifierProvider).allItems;
+                        final targetGears = allRegisteredGears.where((g) => item.isGearTarget(g.id)).toList();
+                        final totalGears = targetGears.length;
+                        final checkedGearsCount = targetGears.where((g) => item.isGearChecked(g.id)).length;
+                        final isAllGearsChecked = totalGears > 0 && checkedGearsCount == totalGears;
+
+                        return Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colorScheme.secondaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${item.plannedDivesCount}ダイブ',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                            ),
+                            if (totalGears > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: isAllGearsChecked
+                                      ? Colors.green.withAlpha(25)
+                                      : colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isAllGearsChecked
+                                        ? Colors.green
+                                        : colorScheme.outlineVariant,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isAllGearsChecked
+                                          ? Icons.check_circle
+                                          : Icons.checklist,
+                                      size: 13,
+                                      color: isAllGearsChecked
+                                          ? Colors.green.shade700
+                                          : colorScheme.primary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      isAllGearsChecked
+                                          ? '持ち物準備完了'
+                                          : '持ち物 $checkedGearsCount/$totalGears',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isAllGearsChecked
+                                            ? Colors.green.shade700
+                                            : colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                     if (item.memo.isNotEmpty) ...[
                       const SizedBox(height: 6),

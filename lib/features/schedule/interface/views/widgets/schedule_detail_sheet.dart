@@ -4,7 +4,11 @@ import '../../../../logbook/domain/entities/dive_log.dart';
 import '../../../../logbook/interface/controllers/dive_log_controller.dart';
 import '../../../../logbook/interface/views/dive_log_detail_page.dart';
 import '../../../../logbook/interface/views/dive_log_form_page.dart';
+import '../../../../my_gear/domain/entities/gear_item.dart';
+import '../../../../my_gear/interface/controllers/gear_controller.dart';
 import '../../../domain/entities/dive_schedule.dart';
+import '../../controllers/schedule_controller.dart';
+import '../schedule_gear_selection_page.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../dive_spot/interface/views/widgets/spot_map_widget.dart';
 import '../../../../weather/domain/entities/marine_weather.dart';
@@ -41,13 +45,16 @@ class ScheduleDetailSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final date = schedule.eventDate;
+    final calendarState = ref.watch(scheduleCalendarProvider);
+    final currentSchedule =
+        calendarState.schedules.where((s) => s.id == schedule.id).firstOrNull ?? schedule;
+    final date = currentSchedule.eventDate;
     final weekdayNames = ['月', '火', '水', '木', '金', '土', '日'];
     final weekdayStr = weekdayNames[date.weekday - 1];
 
     final logsAsync = ref.watch(diveLogListProvider);
     final linkedLogs = logsAsync.maybeWhen(
-      data: (logs) => logs.where((l) => l.scheduleId == schedule.id).toList(),
+      data: (logs) => logs.where((l) => l.scheduleId == currentSchedule.id).toList(),
       orElse: () => <DiveLog>[],
     );
 
@@ -205,6 +212,9 @@ class ScheduleDetailSheet extends ConsumerWidget {
 
             const SizedBox(height: 16),
             _buildWeatherSection(context, ref),
+
+            const SizedBox(height: 16),
+            _buildGearChecklistSection(context, ref, currentSchedule),
 
             if (schedule.memo.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -707,6 +717,318 @@ class ScheduleDetailSheet extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// 持ち物・機材チェックリストセクション
+  Widget _buildGearChecklistSection(
+    BuildContext context,
+    WidgetRef ref,
+    DiveSchedule currentSchedule,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final gearState = ref.watch(gearListNotifierProvider);
+    final allRegisteredGears = gearState.allItems;
+
+    // 今回の予定の持参対象機材のみを抽出
+    final gears = allRegisteredGears.where((g) => currentSchedule.isGearTarget(g.id)).toList();
+
+    final totalCount = gears.length;
+    final checkedCount = gears.where((g) => currentSchedule.isGearChecked(g.id)).length;
+    final isAllChecked = totalCount > 0 && checkedCount == totalCount;
+    final progress = totalCount > 0 ? (checkedCount / totalCount) : 0.0;
+    final isFiltered = currentSchedule.targetGearIds != null;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ヘッダー行 (GEMINI.mdルール準拠: Wrapで横溢れを防止)
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.checklist_rtl, size: 20, color: colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      '持ち物・機材チェックリスト',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Wrap(
+                  spacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (totalCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isAllChecked
+                              ? Colors.green.withAlpha(30)
+                              : colorScheme.primaryContainer.withAlpha(50),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isAllChecked
+                                ? Colors.green
+                                : colorScheme.primary.withAlpha(100),
+                          ),
+                        ),
+                        child: Text(
+                          isAllChecked ? '準備完了!' : '$checkedCount / $totalCount 完了',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isAllChecked ? Colors.green.shade700 : colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    if (totalCount > 0)
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () {
+                          final targetIds = gears.map((g) => g.id).toList();
+                          ref
+                              .read(scheduleCalendarProvider.notifier)
+                              .toggleAllGearCheck(currentSchedule.id, targetIds, !isAllChecked);
+                        },
+                        child: Text(
+                          isAllChecked ? '全解除' : '全選択',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    if (allRegisteredGears.isNotEmpty)
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          side: BorderSide(
+                            color: isFiltered ? colorScheme.primary : colorScheme.outline,
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ScheduleGearSelectionPage(schedule: currentSchedule),
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.tune,
+                          size: 14,
+                          color: isFiltered ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                        ),
+                        label: Text(
+                          isFiltered ? '機材変更中' : '機材を選択',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isFiltered ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                            fontWeight: isFiltered ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+
+            if (totalCount > 0) ...[
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: colorScheme.surfaceContainerHighest,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isAllChecked ? Colors.green : colorScheme.primary,
+                  ),
+                  minHeight: 6,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // 機材一覧リスト
+              ...gears.map((gear) {
+                final isChecked = currentSchedule.isGearChecked(gear.id);
+                return InkWell(
+                  onTap: () {
+                    ref
+                        .read(scheduleCalendarProvider.notifier)
+                        .toggleGearCheck(currentSchedule.id, gear.id);
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: Checkbox(
+                            value: isChecked,
+                            onChanged: (_) {
+                              ref
+                                  .read(scheduleCalendarProvider.notifier)
+                                  .toggleGearCheck(currentSchedule.id, gear.id);
+                            },
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          _getCategoryIcon(gear.category),
+                          size: 18,
+                          color: isChecked ? Colors.grey : colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                gear.name,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  decoration: isChecked ? TextDecoration.lineThrough : null,
+                                  color: isChecked ? Colors.grey : null,
+                                  fontWeight: isChecked ? FontWeight.normal : FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (gear.brand.isNotEmpty || gear.model.isNotEmpty)
+                                Text(
+                                  [gear.brand, gear.model].where((s) => s.isNotEmpty).join(' / '),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ] else if (allRegisteredGears.isNotEmpty) ...[
+              // 全機材はあるが、持参機材が0件に設定されている場合
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withAlpha(50),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.inventory_2_outlined, size: 18, color: colorScheme.outline),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '今回持参する機材が未選択です。',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '「機材を選択」から、今回のトリップに持参する機材を選んでください。',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ScheduleGearSelectionPage(schedule: currentSchedule),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.tune, size: 16),
+                      label: const Text('持参機材を選択する'),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withAlpha(50),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 18, color: colorScheme.outline),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '機材管理でマイ機材を登録すると、ここに自動で持ち物チェックリストとして表示されます。',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getCategoryIcon(GearCategory category) {
+    switch (category) {
+      case GearCategory.regulator:
+        return Icons.water;
+      case GearCategory.bcd:
+        return Icons.shield;
+      case GearCategory.diveComputer:
+        return Icons.watch;
+      case GearCategory.suit:
+        return Icons.accessibility_new;
+      case GearCategory.maskSnorkelFin:
+        return Icons.visibility;
+      case GearCategory.accessories:
+        return Icons.inventory_2_outlined;
+    }
   }
 }
 

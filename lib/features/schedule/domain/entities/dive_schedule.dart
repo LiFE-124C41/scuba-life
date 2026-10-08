@@ -10,6 +10,10 @@ class DiveSchedule {
   final String diveShop;
   final int plannedDivesCount;
   final String memo;
+  /// 機材管理からチェック（準備完了）された機材ID一覧
+  final List<String> checkedGearIds;
+  /// 今回の予定に持参する機材ID一覧（nullの場合は全機材が持参対象）
+  final List<String>? targetGearIds;
 
   DiveSchedule({
     required this.id,
@@ -22,6 +26,8 @@ class DiveSchedule {
     required this.diveShop,
     this.plannedDivesCount = 2,
     this.memo = '',
+    this.checkedGearIds = const [],
+    this.targetGearIds,
   }) {
     if (title.trim().isEmpty) {
       throw ArgumentError('タイトルは必須です。');
@@ -39,6 +45,24 @@ class DiveSchedule {
       throw ArgumentError('経度は-180から180の範囲である必要があります。');
     }
   }
+
+  /// 指定した機材がチェック済みかどうかを判定
+  bool isGearChecked(String gearId) => checkedGearIds.contains(gearId);
+
+  /// 指定した機材が今回の予定の持参対象かどうかを判定（targetGearIdsがnullの場合はすべて持参対象）
+  bool isGearTarget(String gearId) {
+    if (targetGearIds == null) return true;
+    return targetGearIds!.contains(gearId);
+  }
+
+  /// 登録済み全機材のうち、実際に持参対象となる機材ID一覧を計算
+  List<String> effectiveTargetGearIds(List<String> allRegisteredGearIds) {
+    if (targetGearIds == null) return allRegisteredGearIds;
+    return allRegisteredGearIds.where((id) => targetGearIds!.contains(id)).toList();
+  }
+
+  /// チェック済み機材の件数
+  int get checkedGearCount => checkedGearIds.length;
 
   /// 指定した日付と同じ日であるかどうかを判定（時刻は無視）
   bool isSameDay(DateTime date) {
@@ -58,6 +82,8 @@ class DiveSchedule {
     String? diveShop,
     int? plannedDivesCount,
     String? memo,
+    List<String>? checkedGearIds,
+    List<String>? Function()? targetGearIds,
   }) {
     return DiveSchedule(
       id: id ?? this.id,
@@ -70,6 +96,8 @@ class DiveSchedule {
       diveShop: diveShop ?? this.diveShop,
       plannedDivesCount: plannedDivesCount ?? this.plannedDivesCount,
       memo: memo ?? this.memo,
+      checkedGearIds: checkedGearIds ?? this.checkedGearIds,
+      targetGearIds: targetGearIds != null ? targetGearIds() : this.targetGearIds,
     );
   }
 
@@ -89,7 +117,9 @@ class DiveSchedule {
           longitude == other.longitude &&
           diveShop == other.diveShop &&
           plannedDivesCount == other.plannedDivesCount &&
-          memo == other.memo;
+          memo == other.memo &&
+          _listEquals(checkedGearIds, other.checkedGearIds) &&
+          _nullableListEquals(targetGearIds, other.targetGearIds);
 
   @override
   int get hashCode =>
@@ -102,5 +132,22 @@ class DiveSchedule {
       longitude.hashCode ^
       diveShop.hashCode ^
       plannedDivesCount.hashCode ^
-      memo.hashCode;
+      memo.hashCode ^
+      Object.hashAll(checkedGearIds) ^
+      (targetGearIds != null ? Object.hashAll(targetGearIds!) : 0);
+
+  static bool _listEquals(List<String> a, List<String> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  static bool _nullableListEquals(List<String>? a, List<String>? b) {
+    if (a == null && b == null) return true;
+    if (a == null || b == null) return false;
+    return _listEquals(a, b);
+  }
 }

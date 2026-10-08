@@ -74,6 +74,80 @@ void main() {
       expect(updated.memo, original.memo);
     });
 
+    test('checkedGearIds: 機材チェック状態の保持・判定・copyWithが正しく動作すること', () {
+      // Arrange
+      final schedule = DiveSchedule(
+        id: 'sch-check-1',
+        title: '持ち物チェック予定',
+        eventDate: baseDate,
+        destination: '大瀬崎',
+        diveShop: 'ショップA',
+        checkedGearIds: ['gear-1', 'gear-2'],
+      );
+
+      // Act & Assert
+      expect(schedule.checkedGearCount, 2);
+      expect(schedule.isGearChecked('gear-1'), isTrue);
+      expect(schedule.isGearChecked('gear-2'), isTrue);
+      expect(schedule.isGearChecked('gear-3'), isFalse);
+
+      // copyWithでチェック解除
+      final uncheckOne = schedule.copyWith(checkedGearIds: ['gear-1']);
+      expect(uncheckOne.checkedGearCount, 1);
+      expect(uncheckOne.isGearChecked('gear-2'), isFalse);
+
+      // 等価性比較
+      final sameSchedule = DiveSchedule(
+        id: 'sch-check-1',
+        title: '持ち物チェック予定',
+        eventDate: baseDate,
+        destination: '大瀬崎',
+        diveShop: 'ショップA',
+        checkedGearIds: ['gear-1', 'gear-2'],
+      );
+      expect(schedule, equals(sameSchedule));
+    });
+
+    test('targetGearIds: 持参対象機材の判定・除外・effectiveTargetGearIdsが正しく動作すること', () {
+      // Arrange 1: targetGearIds が null（デフォルト：全機材が対象）
+      final defaultSchedule = DiveSchedule(
+        id: 'sch-target-null',
+        title: '全機材持参予定',
+        eventDate: baseDate,
+        destination: '大瀬崎',
+        diveShop: 'ショップA',
+      );
+
+      expect(defaultSchedule.targetGearIds, isNull);
+      expect(defaultSchedule.isGearTarget('gear-1'), isTrue);
+      expect(defaultSchedule.isGearTarget('gear-2'), isTrue);
+      expect(
+        defaultSchedule.effectiveTargetGearIds(['gear-1', 'gear-2', 'gear-3']),
+        ['gear-1', 'gear-2', 'gear-3'],
+      );
+
+      // Arrange 2: targetGearIds を指定（特定機材のみ持参）
+      final customSchedule = defaultSchedule.copyWith(
+        targetGearIds: () => ['gear-1', 'gear-3'],
+      );
+
+      expect(customSchedule.targetGearIds, ['gear-1', 'gear-3']);
+      expect(customSchedule.isGearTarget('gear-1'), isTrue);
+      expect(customSchedule.isGearTarget('gear-2'), isFalse);
+      expect(customSchedule.isGearTarget('gear-3'), isTrue);
+      expect(
+        customSchedule.effectiveTargetGearIds(['gear-1', 'gear-2', 'gear-3']),
+        ['gear-1', 'gear-3'],
+      );
+
+      // copyWithで targetGearIds を null にリセット
+      final resetSchedule = customSchedule.copyWith(
+        targetGearIds: () => null,
+      );
+      expect(resetSchedule.targetGearIds, isNull);
+      expect(resetSchedule.isGearTarget('gear-2'), isTrue);
+    });
+
     group('異常系バリデーションテスト', () {
       test('タイトルが空文字または空白のみの場合、ArgumentErrorがスローされること', () {
         // Arrange, Act & Assert

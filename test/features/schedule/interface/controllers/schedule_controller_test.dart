@@ -42,6 +42,16 @@ class MockScheduleRepository implements DiveScheduleRepository {
   }
 
   @override
+  Future<void> updateSchedule(DiveSchedule schedule) async {
+    final index = _items.indexWhere((item) => item.id == schedule.id);
+    if (index != -1) {
+      _items[index] = schedule;
+    } else {
+      _items.add(schedule);
+    }
+  }
+
+  @override
   Future<void> deleteSchedule(String id) async {
     _items.removeWhere((item) => item.id == id);
   }
@@ -160,6 +170,71 @@ void main() {
       state = container.read(scheduleCalendarProvider);
       expect(state.schedules.length, 3);
       expect(state.hasScheduleOn(DateTime(2026, 11, 1)), isFalse);
+    });
+
+    test('【toggleGearCheck & toggleAllGearCheck】機材チェック状態がトグルおよび全選択/全解除できること', () async {
+      // Arrange
+      final notifier = container.read(scheduleCalendarProvider.notifier);
+      await notifier.loadSchedules();
+
+      // 初期状態: sch-1のcheckedGearIdsは空
+      var sched = container.read(scheduleCalendarProvider).schedules.firstWhere((s) => s.id == 'sch-1');
+      expect(sched.checkedGearIds, isEmpty);
+
+      // Act 1: gear-1 をチェックON
+      await notifier.toggleGearCheck('sch-1', 'gear-1');
+      sched = container.read(scheduleCalendarProvider).schedules.firstWhere((s) => s.id == 'sch-1');
+      expect(sched.checkedGearIds, ['gear-1']);
+      expect(sched.isGearChecked('gear-1'), isTrue);
+
+      // Act 2: gear-2 をチェックON
+      await notifier.toggleGearCheck('sch-1', 'gear-2');
+      sched = container.read(scheduleCalendarProvider).schedules.firstWhere((s) => s.id == 'sch-1');
+      expect(sched.checkedGearIds, ['gear-1', 'gear-2']);
+
+      // Act 3: gear-1 をチェックOFF（トグル）
+      await notifier.toggleGearCheck('sch-1', 'gear-1');
+      sched = container.read(scheduleCalendarProvider).schedules.firstWhere((s) => s.id == 'sch-1');
+      expect(sched.checkedGearIds, ['gear-2']);
+
+      // Act 4: 全選択
+      await notifier.toggleAllGearCheck('sch-1', ['gear-1', 'gear-2', 'gear-3'], true);
+      sched = container.read(scheduleCalendarProvider).schedules.firstWhere((s) => s.id == 'sch-1');
+      expect(sched.checkedGearIds.length, 3);
+
+      // Act 5: 全解除
+      await notifier.toggleAllGearCheck('sch-1', ['gear-1', 'gear-2', 'gear-3'], false);
+      sched = container.read(scheduleCalendarProvider).schedules.firstWhere((s) => s.id == 'sch-1');
+      expect(sched.checkedGearIds, isEmpty);
+    });
+
+    test('【updateTargetGearIds】持参対象機材が更新され、除外された機材のチェックが自動解除されること', () async {
+      // Arrange
+      final notifier = container.read(scheduleCalendarProvider.notifier);
+      await notifier.loadSchedules();
+
+      // sch-1 に gear-1, gear-2 をチェック状態にしておく
+      await notifier.toggleGearCheck('sch-1', 'gear-1');
+      await notifier.toggleGearCheck('sch-1', 'gear-2');
+      var sched = container.read(scheduleCalendarProvider).schedules.firstWhere((s) => s.id == 'sch-1');
+      expect(sched.checkedGearIds, ['gear-1', 'gear-2']);
+      expect(sched.targetGearIds, isNull);
+
+      // Act 1: 持参対象機材を ['gear-1', 'gear-3'] に限定（gear-2 は持参対象外）
+      await notifier.updateTargetGearIds('sch-1', ['gear-1', 'gear-3']);
+      sched = container.read(scheduleCalendarProvider).schedules.firstWhere((s) => s.id == 'sch-1');
+
+      // Assert 1: targetGearIds が更新され、除外された gear-2 が checkedGearIds から自動削除されていること
+      expect(sched.targetGearIds, ['gear-1', 'gear-3']);
+      expect(sched.checkedGearIds, ['gear-1']);
+
+      // Act 2: targetGearIds を null（全機材持参）に戻す
+      await notifier.updateTargetGearIds('sch-1', null);
+      sched = container.read(scheduleCalendarProvider).schedules.firstWhere((s) => s.id == 'sch-1');
+
+      // Assert 2: targetGearIds が null に戻り、checkedGearIds はそのまま維持されること
+      expect(sched.targetGearIds, isNull);
+      expect(sched.checkedGearIds, ['gear-1']);
     });
   });
 }

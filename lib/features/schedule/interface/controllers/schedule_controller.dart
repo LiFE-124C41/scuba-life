@@ -6,6 +6,7 @@ import '../../infrastructure/repositories/in_memory_dive_schedule_repository.dar
 import '../../usecase/add_dive_schedule.dart';
 import '../../usecase/delete_dive_schedule.dart';
 import '../../usecase/get_dive_schedules.dart';
+import '../../usecase/update_dive_schedule.dart';
 
 /// リポジトリプロバイダー
 final diveScheduleRepositoryProvider = Provider<DiveScheduleRepository>((ref) {
@@ -21,6 +22,11 @@ final getDiveSchedulesUseCaseProvider = Provider<GetDiveSchedules>((ref) {
 final addDiveScheduleUseCaseProvider = Provider<AddDiveSchedule>((ref) {
   final repo = ref.watch(diveScheduleRepositoryProvider);
   return AddDiveSchedule(repo);
+});
+
+final updateDiveScheduleUseCaseProvider = Provider<UpdateDiveSchedule>((ref) {
+  final repo = ref.watch(diveScheduleRepositoryProvider);
+  return UpdateDiveSchedule(repo);
 });
 
 final deleteDiveScheduleUseCaseProvider = Provider<DeleteDiveSchedule>((ref) {
@@ -91,6 +97,7 @@ class ScheduleCalendarNotifier extends Notifier<ScheduleCalendarState> {
 
   GetDiveSchedules get _getDiveSchedules => ref.read(getDiveSchedulesUseCaseProvider);
   AddDiveSchedule get _addDiveSchedule => ref.read(addDiveScheduleUseCaseProvider);
+  UpdateDiveSchedule get _updateDiveSchedule => ref.read(updateDiveScheduleUseCaseProvider);
   DeleteDiveSchedule get _deleteDiveSchedule => ref.read(deleteDiveScheduleUseCaseProvider);
 
   /// 予定一覧の取得
@@ -154,6 +161,60 @@ class ScheduleCalendarNotifier extends Notifier<ScheduleCalendarState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e);
     }
+  }
+
+  /// 予定更新（持ち物チェック状態の変更等）
+  Future<void> updateSchedule(DiveSchedule schedule) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _updateDiveSchedule(schedule);
+      await loadSchedules();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e);
+    }
+  }
+
+  /// 持ち物（機材）のチェック状態をトグル
+  Future<void> toggleGearCheck(String scheduleId, String gearId) async {
+    final schedule = state.schedules.where((s) => s.id == scheduleId).firstOrNull;
+    if (schedule == null) return;
+
+    final currentChecked = List<String>.from(schedule.checkedGearIds);
+    if (currentChecked.contains(gearId)) {
+      currentChecked.remove(gearId);
+    } else {
+      currentChecked.add(gearId);
+    }
+
+    final updated = schedule.copyWith(checkedGearIds: currentChecked);
+    await updateSchedule(updated);
+  }
+
+  /// 持ち物（機材）の全チェック / 全解除
+  Future<void> toggleAllGearCheck(String scheduleId, List<String> gearIds, bool checkAll) async {
+    final schedule = state.schedules.where((s) => s.id == scheduleId).firstOrNull;
+    if (schedule == null) return;
+
+    final newChecked = checkAll ? List<String>.from(gearIds) : <String>[];
+    final updated = schedule.copyWith(checkedGearIds: newChecked);
+    await updateSchedule(updated);
+  }
+
+  /// 持参対象機材（targetGearIds）の更新（持参対象外となった機材のチェック状態は自動解除）
+  Future<void> updateTargetGearIds(String scheduleId, List<String>? targetGearIds) async {
+    final schedule = state.schedules.where((s) => s.id == scheduleId).firstOrNull;
+    if (schedule == null) return;
+
+    final currentChecked = List<String>.from(schedule.checkedGearIds);
+    if (targetGearIds != null) {
+      currentChecked.removeWhere((id) => !targetGearIds.contains(id));
+    }
+
+    final updated = schedule.copyWith(
+      targetGearIds: () => targetGearIds,
+      checkedGearIds: currentChecked,
+    );
+    await updateSchedule(updated);
   }
 
   /// 予定削除

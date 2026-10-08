@@ -5,6 +5,7 @@ import 'package:scuba_life/features/schedule/domain/repositories/dive_schedule_r
 import 'package:scuba_life/features/schedule/usecase/add_dive_schedule.dart';
 import 'package:scuba_life/features/schedule/usecase/delete_dive_schedule.dart';
 import 'package:scuba_life/features/schedule/usecase/get_dive_schedules.dart';
+import 'package:scuba_life/features/schedule/usecase/update_dive_schedule.dart';
 
 /// テスト用のフェイクリポジトリ
 /// 外部依存なしでインメモリにデータを保持し、各ユースケースの入出力を検証する
@@ -22,6 +23,16 @@ class FakeDiveScheduleRepository implements DiveScheduleRepository {
   }
 
   @override
+  Future<void> updateSchedule(DiveSchedule schedule) async {
+    final index = _items.indexWhere((item) => item.id == schedule.id);
+    if (index != -1) {
+      _items[index] = schedule;
+    } else {
+      _items.add(schedule);
+    }
+  }
+
+  @override
   Future<void> deleteSchedule(String id) async {
     _items.removeWhere((item) => item.id == id);
   }
@@ -31,12 +42,14 @@ void main() {
   late FakeDiveScheduleRepository fakeRepo;
   late GetDiveSchedules getDiveSchedules;
   late AddDiveSchedule addDiveSchedule;
+  late UpdateDiveSchedule updateDiveSchedule;
   late DeleteDiveSchedule deleteDiveSchedule;
 
   setUp(() {
     fakeRepo = FakeDiveScheduleRepository();
     getDiveSchedules = GetDiveSchedules(fakeRepo);
     addDiveSchedule = AddDiveSchedule(fakeRepo);
+    updateDiveSchedule = UpdateDiveSchedule(fakeRepo);
     deleteDiveSchedule = DeleteDiveSchedule(fakeRepo);
   });
 
@@ -90,6 +103,31 @@ void main() {
 
       // Assert
       expect(afterDelete.isEmpty, isTrue);
+    });
+
+    test('【UpdateDiveSchedule】持ち物チェック等で更新された予定が正常に保存・反映されること', () async {
+      // Arrange
+      final initialSchedule = DiveSchedule(
+        id: 'update-target',
+        title: '持ち物チェック予定',
+        eventDate: DateTime(2026, 9, 30),
+        destination: '大瀬崎',
+        diveShop: 'ショップA',
+        checkedGearIds: ['gear-1'],
+      );
+      await addDiveSchedule(initialSchedule);
+
+      // Act
+      final updatedSchedule = initialSchedule.copyWith(
+        checkedGearIds: ['gear-1', 'gear-2'],
+      );
+      await updateDiveSchedule(updatedSchedule);
+
+      // Assert
+      final schedules = await getDiveSchedules(const NoParams());
+      expect(schedules.length, 1);
+      expect(schedules.first.checkedGearIds, ['gear-1', 'gear-2']);
+      expect(schedules.first.isGearChecked('gear-2'), isTrue);
     });
   });
 }

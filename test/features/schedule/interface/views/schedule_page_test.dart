@@ -21,6 +21,16 @@ class MockScheduleRepositoryForWidget implements DiveScheduleRepository {
   }
 
   @override
+  Future<void> updateSchedule(DiveSchedule schedule) async {
+    final index = _items.indexWhere((item) => item.id == schedule.id);
+    if (index != -1) {
+      _items[index] = schedule;
+    } else {
+      _items.add(schedule);
+    }
+  }
+
+  @override
   Future<void> deleteSchedule(String id) async {
     _items.removeWhere((item) => item.id == id);
   }
