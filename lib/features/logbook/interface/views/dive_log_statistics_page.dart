@@ -177,9 +177,11 @@ class DiveLogStatisticsPage extends ConsumerWidget {
         ),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 // 総本数表示
                 Column(
@@ -193,6 +195,7 @@ class DiveLogStatisticsPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
@@ -332,7 +335,7 @@ class DiveLogStatisticsPage extends ConsumerWidget {
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 2.2,
+              mainAxisExtent: 84,
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
               children: [
@@ -387,7 +390,7 @@ class DiveLogStatisticsPage extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
 
     Widget content = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(50),
         borderRadius: BorderRadius.circular(12),
@@ -396,14 +399,19 @@ class DiveLogStatisticsPage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Icon(icon, size: 16, color: colorScheme.primary.withAlpha(180)),
@@ -416,6 +424,8 @@ class DiveLogStatisticsPage extends ConsumerWidget {
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           Text(
             subtitle,
@@ -423,6 +433,8 @@ class DiveLogStatisticsPage extends ConsumerWidget {
               fontSize: 10,
               color: colorScheme.outline,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -506,10 +518,12 @@ class DiveLogStatisticsPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              spacing: 16,
+              runSpacing: 6,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
                       width: 10,
@@ -527,6 +541,7 @@ class DiveLogStatisticsPage extends ConsumerWidget {
                   ],
                 ),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
                       width: 10,
@@ -698,18 +713,16 @@ class DiveLogStatisticsPage extends ConsumerWidget {
               ),
               subtitle: Padding(
                 padding: const EdgeInsets.only(top: 4.0),
-                child: Row(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 2,
                   children: [
                     Text('水深 ${log.maxDepthMeter.toStringAsFixed(1)}m'),
-                    const SizedBox(width: 8),
                     Text('時間 ${log.bottomTimeMinutes}分'),
-                    const SizedBox(width: 8),
                     Text(log.entryMethod),
                     if (log.underwaterCurrent.isNotEmpty &&
-                        log.underwaterCurrent != 'なし') ...[
-                      const SizedBox(width: 8),
+                        log.underwaterCurrent != 'なし')
                       Text('流れ:${log.underwaterCurrent}'),
-                    ],
                   ],
                 ),
               ),

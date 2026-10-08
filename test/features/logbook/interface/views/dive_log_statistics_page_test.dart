@@ -108,6 +108,34 @@ void main() {
       expect(find.text('伊豆海洋公園'), findsOneWidget);
     });
 
+    testWidgets('統計画面: 小型画面（幅360px）でもオーバーフローせずに正常に描画できること',
+        (tester) async {
+      // Arrange (準備)
+      await tester.binding.setSurfaceSize(const Size(360, 640));
+      addTearDown(() async => await tester.binding.setSurfaceSize(null));
+
+      final stats = DiveStatistics.fromLogs(
+        sampleLogs,
+        referenceDate: DateTime(2026, 9, 30),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            diveStatisticsProvider.overrideWithValue(AsyncData(stats)),
+          ],
+          child: const MaterialApp(
+            home: DiveLogStatisticsPage(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Assert (検証): 小型画面でもオーバーフロー等の描画例外が発生していないこと
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('統計画面: ログが0件の場合は空ステートの案内が表示されること', (tester) async {
       // Arrange (準備)
       final emptyStats = DiveStatistics.empty();

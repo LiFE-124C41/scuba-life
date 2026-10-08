@@ -162,13 +162,16 @@ class ScheduleDetailSheet extends ConsumerWidget {
                         children: [
                           const Icon(Icons.map, size: 18, color: Color(0xFF0077B6)),
                           const SizedBox(width: 8),
-                          Text(
-                            'ダイビングポイント位置',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
+                          Expanded(
+                            child: Text(
+                              'ダイビングポイント位置',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const Spacer(),
+                          const SizedBox(width: 8),
                           Text(
                             '${schedule.latitude!.toStringAsFixed(4)}, ${schedule.longitude!.toStringAsFixed(4)}',
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -443,13 +446,15 @@ class ScheduleDetailSheet extends ConsumerWidget {
               children: [
                 const Icon(Icons.waves, size: 20, color: Color(0xFF0077B6)),
                 const SizedBox(width: 8),
-                Text(
-                  '予定日の海況・気象予報',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    '予定日の海況・気象予報',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 18),
                   tooltip: '海況予報を再取得',
@@ -521,7 +526,7 @@ class ScheduleDetailSheet extends ConsumerWidget {
                   children: [
                     // コンディション判定ヘッダー
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
                         color: condColor.withAlpha(25),
                         borderRadius: BorderRadius.circular(10),
@@ -530,16 +535,19 @@ class ScheduleDetailSheet extends ConsumerWidget {
                       child: Row(
                         children: [
                           Icon(Icons.verified, size: 18, color: condColor),
-                          const SizedBox(width: 8),
-                          Text(
-                            '潜水コンディション: ${weather.conditionLevel.label}',
-                            style: TextStyle(
-                              color: condColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '潜水コンディション: ${weather.conditionLevel.label}',
+                              style: TextStyle(
+                                color: condColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const Spacer(),
+                          const SizedBox(width: 6),
                           Text(
                             '${weather.forecastTime.month}月${weather.forecastTime.day}日 予報',
                             style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
@@ -554,7 +562,7 @@ class ScheduleDetailSheet extends ConsumerWidget {
                       crossAxisCount: 3,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      childAspectRatio: 1.8,
+                      mainAxisExtent: 68,
                       mainAxisSpacing: 8,
                       crossAxisSpacing: 8,
                       children: [
@@ -624,7 +632,7 @@ class ScheduleDetailSheet extends ConsumerWidget {
     required Color iconColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
       decoration: BoxDecoration(
         color: iconColor.withAlpha(15),
         borderRadius: BorderRadius.circular(10),
@@ -632,6 +640,7 @@ class ScheduleDetailSheet extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
@@ -649,7 +658,11 @@ class ScheduleDetailSheet extends ConsumerWidget {
           const SizedBox(height: 2),
           Text(
             value,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              height: 1.2,
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

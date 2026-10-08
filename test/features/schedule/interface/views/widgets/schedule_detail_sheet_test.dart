@@ -122,4 +122,43 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('ScheduleDetailSheet: 2376x968端末等（幅360px前後）でも海況グリッドがオーバーフローせずに描画できること',
+      (WidgetTester tester) async {
+    // Arrange: 2376x968 (縦向き: 論理幅 約368px, ここではより厳しい360x900で検証)
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() async => await tester.binding.setSurfaceSize(null));
+
+    final testSchedule = DiveSchedule(
+      id: 'test-responsiveness',
+      title: '伊豆海洋公園 ファンダイブ',
+      eventDate: DateTime(2026, 10, 2),
+      destination: '伊豆海洋公園',
+      latitude: 34.8906,
+      longitude: 139.1361,
+      diveShop: 'テストショップ',
+      plannedDivesCount: 2,
+    );
+
+    // Act
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          marineWeatherRepositoryProvider.overrideWithValue(MockTestWeatherRepository()),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: ScheduleDetailSheet(
+              schedule: testSchedule,
+              onDelete: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Assert: オーバーフロー例外が発生していないこと
+    expect(tester.takeException(), isNull);
+  });
 }

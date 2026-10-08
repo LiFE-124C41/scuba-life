@@ -120,8 +120,11 @@ class _GearDetailPageState extends ConsumerState<GearDetailPage> {
                     const SizedBox(height: 12),
                     const Divider(height: 1),
                     const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
                         const Text(
                           'メンテナンス状態:',
@@ -147,10 +150,14 @@ class _GearDetailPageState extends ConsumerState<GearDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.build_circle, color: Theme.of(context).colorScheme.primary),
                               const SizedBox(width: 8),
@@ -276,12 +283,16 @@ class _GearDetailPageState extends ConsumerState<GearDetailPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 13, color: Colors.black54)),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: highlight ? Colors.red.shade700 : Colors.black87,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: highlight ? Colors.red.shade700 : Colors.black87,
+              ),
             ),
           ),
         ],
