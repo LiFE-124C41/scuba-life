@@ -1,11 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/dive_spot.dart';
 import '../../domain/repositories/dive_spot_repository.dart';
+import '../../../auth/interface/controllers/auth_controller.dart';
+import '../../infrastructure/repositories/firestore_dive_spot_repository.dart';
 import '../../infrastructure/repositories/in_memory_dive_spot_repository.dart';
 import '../../usecase/dive_spot_usecases.dart';
 
 // リポジトリプロバイダー
+/// ログイン中は FirestoreDiveSpotRepository、未ログインやテスト時は InMemoryDiveSpotRepository を返却
 final diveSpotRepositoryProvider = Provider<DiveSpotRepository>((ref) {
+  final authUser = ref.watch(authStateProvider).asData?.value;
+  if (authUser != null) {
+    return FirestoreDiveSpotRepository(userId: authUser.id);
+  }
   return InMemoryDiveSpotRepository();
 });
 

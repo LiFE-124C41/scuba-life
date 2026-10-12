@@ -237,8 +237,8 @@ gantt
 | **M1: Firebase環境構築 & セキュリティルール策定** | **【完了 ✅】** | - Firebaseコンソールでのプロジェクト作成 (`scuba-life-a29fb`)<br>- `flutterfire configure` によるAndroid/iOS接続設定<br>- Firestore コレクション設計 & セキュリティルール作成・デプロイ<br>- Android デバッグ SHA-1 / SHA-256 フィンガープリント登録<br>- 機密ファイル（`firebase_options.dart` 等）の `.gitignore` 除外 & `.example` テンプレート整備 | Firebase CLIおよび実環境で接続が通り、セキュリティルールが本番デプロイ済みであること。 |
 | **M2: 認証機能の実装（メール/PW + Google SSO）** | **【完了 ✅】** | - `features/auth` Clean Architecture 完全準拠実装<br>- メールアドレス登録・ログイン・ログアウト<br>- Googleサインイン / Google SSO 新規登録<br>- パスワードマネージャー（Bitwarden等）Autofill対応<br>- ログイン状態によるアプリ起点ルーティング制御<br>- Riverpod Notifier & UseCase 単体テスト作成（全155件パス） | 新規ユーザー登録、ログイン、Google SSO、ログアウトが実機で動作確認済みであること。 |
 | **M2.5: ユーザープロファイル連携 & Cカード情報保存** | **【完了 ✅】** | - Firestore `users/{userId}` 初期ドキュメントの自動生成 (upsert)<br>- Cカード情報（指導団体: PADI等、ランク: OW/AOW等、カード番号、経験本数オフセット）の編集・保存<br>- プロフィール画面（`ProfilePage`）拡張および編集ダイアログ実装<br>- UseCase・UI・小型画面（360px）レスポンシブテスト作成（全162件パス） | プロフィール編集内容が Firestore に永続化され、アプリ再起動後も正しく復元されること。 |
-| **M3: 各種データのクラウド永続化（Firestore同期）** | **【次回着手】** | - `FirestoreDiveLogRepository` (`/users/{userId}/dive_logs`)<br>- `FirestoreGearRepository` (`/users/{userId}/gear_items`)<br>- `FirestoreScheduleRepository` (`/users/{userId}/dive_schedules`)<br>- `FirestoreDiveSpotRepository` (`/dive_spots`, `favorite_spots`)<br>- リポジトリProviderのFirestore版への差し替え | ログ登録や機材変更を行うと即座にFirestoreに反映され、別端末・再起動後もデータが完全に復元されること。 |
-| **M4: Appleサインイン追加 & オフライン最適化** | **【予定】** | - Apple Sign-In の実装（iOS審査必須対応）<br>- Firestore のローカルキャッシュ永続化検証<br>- 機内モード（圏外）での読み書き動作確認 | iOSでAppleサインインが動作し、機内モード時でもアプリがクラッシュせず直前のログを閲覧・追記できること。 |
+| **M3: 各種データのクラウド永続化（Firestore同期）** | **【完了 ✅】** | - `FirestoreDiveLogRepository` (`/users/{userId}/dive_logs`)<br>- `FirestoreGearRepository` (`/users/{userId}/gear_items`)<br>- `FirestoreScheduleRepository` (`/users/{userId}/dive_schedules`)<br>- `FirestoreDiveSpotRepository` (`/dive_spots`, `favorite_spots`)<br>- リポジトリProviderのFirestore版動的切り替え<br>- `fake_cloud_firestore` によるリポジトリ単体テスト（全177件パス） | ログ登録や機材変更を行うと即座にFirestoreに反映され、別端末・再起動後もデータが完全に復元されること。 |
+| **M4: Appleサインイン追加 & オフライン最適化** | **【次回着手】** | - Apple Sign-In の実装（iOS審査必須対応）<br>- Firestore のローカルキャッシュ永続化検証<br>- 機内モード（圏外）での読み書き動作確認 | iOSでAppleサインインが動作し、機内モード時でもアプリがクラッシュせず直前のログを閲覧・追記できること。 |
 | **M5: アカウント削除・規約対応・本番準備** | **【予定】** | - アカウント削除機能（Apple/Googleガイドライン準拠）<br>- パスワード再設定メール送信機能の実機検証<br>- 利用規約・プライバシーポリシー画面<br>- README の機能一覧・設計セクション更新 | アカウント削除を含む全規約対応が完了し、READMEが最新状態に同期され、テストがオールグリーンであること。 |
 
 ---
@@ -312,6 +312,33 @@ Clean Architecture に基づき、ビジネスロジックをフレームワー�
   - 全 **162 件** のユニットテスト・ウィジェットテストがオールグリーン（`flutter test` パス）。
   - 静的解析エラー 0 件（`flutter analyze` 0 issues）。
 
+### 4. 各種データのクラウド同期・Firestore永続化（M3実績）
+Clean Architecture のレイヤード設計を厳格に維持し、UI層やUseCase層を変更することなく、インフラ層にFirestore実装を追加・DI動的切り替えを実現：
+
+- **`FirestoreDiveLogRepository` (`lib/features/logbook/infrastructure/repositories/firestore_dive_log_repository.dart`)**:
+  - コレクションパス: `/users/{userId}/dive_logs/{logId}`
+  - 潜水ログのCRUD操作、`DateTime` と `Timestamp` の相互マッピング、日付降順ソート。
+  - プロファイルの `totalDivesOffset` と連動した通算ダイブ本数カウント。
+- **`FirestoreGearRepository` (`lib/features/my_gear/infrastructure/repositories/firestore_gear_repository.dart`)**:
+  - コレクションパス: `/users/{userId}/gear_items/{gearId}`
+  - マイ機材の登録・更新・削除・一覧取得。
+  - `GearCategory` enum と文字列の相互マッピング、オーバーホール（OH）日・本数・周期設定のクラウド永続化。
+- **`FirestoreScheduleRepository` (`lib/features/schedule/infrastructure/repositories/firestore_schedule_repository.dart`)**:
+  - コレクションパス: `/users/{userId}/dive_schedules/{scheduleId}`
+  - トリップ予定の保存・更新・削除、月別・期間抽出。
+  - 持ち物・機材チェックリスト（Map構造）のクラウド同期。
+- **`FirestoreDiveSpotRepository` (`lib/features/dive_spot/infrastructure/repositories/firestore_dive_spot_repository.dart`)**:
+  - 共通マスタ: `/dive_spots/{spotId}`、お気に入り: `/users/{userId}/favorite_spots/{spotId}`
+  - アプリ初回起動時に日本の代表的9スポットを共通マスタへ自動シード。
+  - ユーザー追加スポットの保存、お気に入りトグル（★）のユーザー別保持。
+- **DI (Riverpod) 動的切り替え設計**:
+  - 各コントローラーの Repository Provider (`diveLogRepositoryProvider`, `gearRepositoryProvider`, `diveScheduleRepositoryProvider`, `diveSpotRepositoryProvider`) において、`ref.watch(authStateProvider)` を参照。
+  - ログイン中は各 `Firestore...Repository` を、未ログイン・初期起動時やユニットテスト環境では既存の `InMemory...Repository` を自動返却するシームレスなDI配線を完了。
+- **テスト品質**:
+  - `fake_cloud_firestore: ^4.3.0` を導入し、ネットワーク通信不要な高速Firestoreリポジトリ単体テスト（全15テスト）を作成。
+  - 全体テスト **177 件** がオールグリーン（`flutter test` パス）。
+  - 静的解析エラー 0 件（`flutter analyze` 0 issues）。
+
 ---
 
 ## 7. 今後の対応予定（ネクストアクション詳細）
@@ -321,50 +348,33 @@ Clean Architecture に基づき、ビジネスロジックをフレームワー�
 ```mermaid
 flowchart TD
     M1_M2["【完了 ✅】<br>M1: 基盤構築<br>M2: メール & Google 認証"] --> M2_5["【完了 ✅】<br>M2.5: ユーザープロファイル連携<br>& Cカード情報保存"]
-    M2_5 --> M3["【次回着手: M3】<br>各種データの Firestore クラウド同期<br>(ログ / 機材 / 予定 / スポット)"]
-    M3 --> M4["【M4】<br>Apple サインイン追加<br>& オフラインキャッシュ最適化"]
+    M2_5 --> M3["【完了 ✅】<br>M3: 各種データの Firestore クラウド同期<br>(ログ / 機材 / 予定 / スポット)"]
+    M3 --> M4["【次回着手: M4】<br>Apple サインイン追加<br>& オフラインキャッシュ最適化"]
     M4 --> M5["【M5】<br>アカウント削除機能<br>& ストア公開準備"]
 ```
 
-### ステップ 1: 【次回着手】各種データの Cloud Firestore クラウド同期（M3）
+### ステップ 1: 【次回着手】Appleサインイン追加 & オフライン最適化（M4）
 
-現在アプリ内でインメモリ保持されている各ドメインデータを、ユーザー固有のサブコレクションへ保存・同期します。
-
-1. **`FirestoreDiveLogRepository` の実装**:
-   - コレクションパス: `/users/{userId}/dive_logs/{logId}`
-   - 潜水ログの作成・更新・削除・一覧取得（日付降順ストリーム）。
-   - プロファイル内の `totalDivesOffset`（過去本数）と合算した累計ダイブ番号の自動計算。
-2. **`FirestoreGearRepository` の実装**:
-   - コレクションパス: `/users/{userId}/gear_items/{gearId}`
-   - マイ機材の登録・編集・オーバーホール（OH）情報管理。
-3. **`FirestoreScheduleRepository` の実装**:
-   - コレクションパス: `/users/{userId}/dive_schedules/{scheduleId}`
-   - トリップ予定、持ち物チェックリストの同期。
-4. **`FirestoreDiveSpotRepository` の実装**:
-   - 共通マスタ: `/dive_spots/{spotId}`
-   - ユーザーお気に入り: `/users/{userId}/favorite_spots/{spotId}`
-5. **Provider 切り替え & 移行戦略**:
-   - `diveLogRepositoryProvider` などの DI 定義を `Firestore...Repository` に差し替え。
-   - テスト時は引き続き `InMemory...` を注入できるように設計。
+1. **Apple でサインイン（Sign in with Apple）の実装**:
+   - iOS App Store 審査ガイドライン 4.8（サードパーティログインを提供するアプリは Apple サインインの提供が必須）に対応。
+   - `sign_in_with_apple` パッケージ連携、Firebase Auth クレデンシャル連携。
+2. **オフライン永続化キャッシュ検証**:
+   - 電波が圏外になる洋上・ボート上でのログ入力・機材チェックを可能にするため、Firestore のオフライン永続化（Local Cache）の動作検証を実施。
+   - 機内モードでのログ書き込み $\rightarrow$ オンライン復帰時の自動アップロード同期の確認。
 
 ---
 
-### ステップ 2: ストア公開必須要件 & オフライン最適化（M4 & M5）
+### ステップ 2: ストア公開必須要件 & アカウント削除（M5）
 
-1. **Apple でサインイン（Sign in with Apple）の実装（M4）**:
-   - iOS App Store 審査ガイドライン 4.8（サードパーティログインを提供するアプリは Apple サインインの提供が必須）に対応。
-   - `sign_in_with_apple` パッケージ連携。
-2. **オフライン永続化キャッシュ検証（M4）**:
-   - 電波が圏外になる洋上・ボート上でのログ入力・機材チェックを可能にするため、Firestore のオフライン永続化（Local Cache）の動作検証を実施。
-3. **アカウント削除（退会）機能の実装（M5）**:
+1. **アカウント削除（退会）機能の実装**:
    - Apple / Google 審査ガイドライン準拠の必須要件。
    - `ProfilePage` からアカウント削除ダイアログを起動。
    - Firebase Authentication ユーザー削除 ＋ Firestore 内の `/users/{userId}` および全サブコレクションの一括削除処理を実装。
-4. **パスワードリセットメールの実機検証（M5）**:
+2. **パスワードリセットメールの実機検証**:
    - パスワード再設定画面（`PasswordResetPage`）からのメール送信および再設定リンクの疎通確認。
-5. **法的要件 & リリースドキュメント（M5）**:
+3. **法的要件 & リリースドキュメント**:
    - 利用規約・プライバシーポリシー画面への導線追加。
-   - [README.md](file:///e:/source/repos/scuba-life/README.md) の完全同期。
+   - README の完全同期。
 
 ---
 
@@ -394,11 +404,12 @@ flowchart TD
   - [x] `ProfilePage` に Cカード情報表示 & 編集ダイアログ（`EditDiverProfileDialog`）追加
   - [x] 小型画面（幅360px）レスポンシブ対応
   - [x] プロファイル機能の単体 & ウィジェットテスト作成（全162件テスト合格）
-- [ ] **M3: 各種データの Firestore 同期**
-  - [ ] `FirestoreDiveLogRepository` 実装 & DI 切り替え
-  - [ ] `FirestoreGearRepository` 実装 & DI 切り替え
-  - [ ] `FirestoreScheduleRepository` 実装 & DI 切り替え
-  - [ ] `FirestoreDiveSpotRepository` 実装 & DI 切り替え
+- [x] **M3: 各種データの Firestore 同期**
+  - [x] `FirestoreDiveLogRepository` 実装 & DI 切り替え
+  - [x] `FirestoreGearRepository` 実装 & DI 切り替え
+  - [x] `FirestoreScheduleRepository` 実装 & DI 切り替え
+  - [x] `FirestoreDiveSpotRepository` 実装 & DI 切り替え
+  - [x] 各リポジトリの単体テスト作成 (`fake_cloud_firestore` で全177件テスト合格)
 - [ ] **M4: Appleサインイン & オフライン検証**
   - [ ] `sign_in_with_apple` 実装
   - [ ] 圏外（オフライン）キャッシュの動作テスト

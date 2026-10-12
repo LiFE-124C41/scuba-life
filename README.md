@@ -120,6 +120,15 @@
   - ログイン中ダイバーのアバター、表示名、メールアドレス、UID、同期状態バッジを表示。
   - 確認ダイアログ付きの安全なログアウト機能。
 
+### 7. クラウドデータ同期・永続化（Cloud Firestore）
+- **ユーザー専用サブコレクション構造**:
+  - ログブック（`dive_logs`）、マイ機材（`gear_items`）、トリップ予定（`dive_schedules`）、お気に入りスポット（`favorite_spots`）を `/users/{userId}/...` 配下に保存・同期。
+  - セキュリティルール（`firestore.rules`）により本人以外のアクセスを物理遮断。
+- **マルチデバイス・リアルタイム同期**:
+  - 端末変更時や再インストール時にも、ログインするだけで全ての潜水ログ・機材メンテ状況・予定が即座に復元。
+- **クリーンアーキテクチャによるシームレスなDI切り替え**:
+  - 認証状態（`authStateProvider`）に応じて、インメモリ実装とFirestore実装を自動切り替え。テストや未ログイン時も一切コードを改変せずに動作可能。
+
 ---
 
 
@@ -171,7 +180,8 @@ lib/
 │   │   │       └── widgets/
 │   │   │           └── dive_log_summary_card.dart# 一覧上部サマリーカード
 │   │   └── infrastructure/                 # インフラ層（データ永続化実装、外部連携）
-│   │       └── repositories/in_memory_dive_log_repository.dart
+│   │       ├── repositories/firestore_dive_log_repository.dart # Firestore同期実装
+│   │       └── repositories/in_memory_dive_log_repository.dart # テスト・未ログイン用
 │   ├── schedule/                           # ② スケジュール管理機能（カレンダーUI）
 │   │   ├── domain/
 │   │   │   ├── entities/dive_schedule.dart
@@ -189,6 +199,8 @@ lib/
 │   │   │           ├── schedule_detail_sheet.dart # 予定詳細ボトムシート
 │   │   │           └── schedule_form_dialog.dart  # 予定追加ダイアログ
 │   │   └── infrastructure/
+│   │       ├── repositories/firestore_schedule_repository.dart # Firestore同期実装
+│   │       └── repositories/in_memory_schedule_repository.dart # テスト・未ログイン用
 │   ├── dive_spot/                          # ③ ダイビングポイント管理 & 共通マップ
 │   │   ├── domain/                         # ドメイン層（エンティティ、リポジトリIF）
 │   │   │   ├── entities/dive_spot.dart
@@ -201,6 +213,7 @@ lib/
 │   │   │       ├── dive_spot_select_modal.dart # ポイント検索・選択モーダル
 │   │   │       └── widgets/spot_map_widget.dart # OpenStreetMap共通地図
 │   │   └── infrastructure/                 # インフラ層
+│   │       ├── repositories/firestore_dive_spot_repository.dart # Firestore同期実装
 │   │       └── repositories/in_memory_dive_spot_repository.dart # 日本の代表的スポットプリセット
 │   ├── weather/                            # ④ 海況・海洋気象予報（Open-Meteo連携）
 │   │   ├── domain/                         # エンティティ（MarineWeather）、リポジトリIF
@@ -226,7 +239,8 @@ lib/
 │       │           ├── gear_summary_card.dart     # メンテナンス状況サマリー
 │       │           └── overhaul_status_badge.dart # OHステータスバッジ
 │       └── infrastructure/                 # インフラ層
-│           └── repositories/in_memory_gear_repository.dart
+│           ├── repositories/firestore_gear_repository.dart # Firestore同期実装
+│           └── repositories/in_memory_gear_repository.dart # テスト・未ログイン用
 │   └── auth/                               # ⑥ アカウント・認証・プロファイル機能 (Firebase Auth & Firestore)
 │       ├── domain/                         # ドメイン層 (Pure Dart)
 │       │   ├── entities/user_account.dart  # ユーザー情報・Cカード情報

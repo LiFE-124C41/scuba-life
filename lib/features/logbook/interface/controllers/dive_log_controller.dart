@@ -1,18 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/dive_log.dart';
 import '../../domain/repositories/dive_log_repository.dart';
+import '../../infrastructure/repositories/firestore_dive_log_repository.dart';
 import '../../infrastructure/repositories/in_memory_dive_log_repository.dart';
 import '../../usecase/get_dive_logs.dart';
 import '../../usecase/save_dive_log.dart';
 import '../../usecase/delete_dive_log.dart';
+import '../../../auth/interface/controllers/auth_controller.dart';
 import '../../../my_gear/interface/controllers/gear_controller.dart';
 import '../../../../core/usecase/usecase.dart';
 
 // --- DI Providers ---
 
 /// ログブックリポジトリのProvider
-/// テスト時や他インフラ実装への差し替えは overrides で容易に行える
+/// ログイン中は FirestoreDiveLogRepository、未ログインやテスト時は InMemoryDiveLogRepository を返却
 final diveLogRepositoryProvider = Provider<DiveLogRepository>((ref) {
+  final authUser = ref.watch(authStateProvider).asData?.value;
+  if (authUser != null) {
+    return FirestoreDiveLogRepository(userId: authUser.id);
+  }
   return InMemoryDiveLogRepository();
 });
 
