@@ -10,6 +10,8 @@ import 'package:scuba_life/features/auth/interface/views/password_reset_page.dar
 import 'package:scuba_life/features/auth/interface/views/profile_page.dart';
 import 'package:scuba_life/features/auth/interface/views/sign_in_page.dart';
 import 'package:scuba_life/features/auth/interface/views/sign_up_page.dart';
+import 'package:scuba_life/features/auth/interface/views/terms_of_service_page.dart';
+import 'package:scuba_life/features/auth/interface/views/privacy_policy_page.dart';
 
 void main() {
   group('Auth Views Widget & Responsive Tests', () {
@@ -124,7 +126,9 @@ void main() {
       expect(find.text('Google で登録'), findsOneWidget);
 
       // Act: Google で登録ボタンを押下
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Google で登録'));
+      final googleButton = find.widgetWithText(OutlinedButton, 'Google で登録');
+      await tester.ensureVisible(googleButton);
+      await tester.tap(googleButton);
       await tester.pumpAndSettle();
 
       // Assert: Googleユーザーとしてログイン・登録されていること
@@ -322,6 +326,148 @@ void main() {
 
       loggedInRepo.dispose();
       fakeUserRepo.dispose();
+    });
+
+    testWidgets('PasswordResetPage: メールアドレスを入力して送信すると送信完了画面に切り替わること',
+        (WidgetTester tester) async {
+      // Arrange: リポジトリに対象メールユーザーを登録
+      await fakeAuthRepo.signUpWithEmail(
+        email: 'reset@example.com',
+        password: 'password123',
+      );
+      await fakeAuthRepo.signOut();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          ],
+          child: const MaterialApp(
+            home: PasswordResetPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 初期フォーム確認
+      expect(find.text('パスワードの再設定'), findsOneWidget);
+      expect(find.text('再設定メールを送信'), findsOneWidget);
+
+      // メールアドレス入力
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'メールアドレス'),
+        'reset@example.com',
+      );
+      await tester.pumpAndSettle();
+
+      // 送信ボタン押下
+      await tester.tap(find.widgetWithText(FilledButton, '再設定メールを送信'));
+      await tester.pumpAndSettle();
+
+      // 送信完了画面が表示されていること
+      expect(find.text('再設定メールを送信しました'), findsOneWidget);
+      expect(find.textContaining('reset@example.com 宛てに'), findsOneWidget);
+      expect(find.text('ログイン画面へ戻る'), findsOneWidget);
+    });
+
+    testWidgets('SignUpPage: 小型画面（幅360px）でも利用規約・プライバシーポリシー案内が崩れず表示されること',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          ],
+          child: const MaterialApp(
+            home: SignUpPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 利用規約・プライバシーポリシーのリンクが表示されていること
+      expect(find.text('利用規約'), findsOneWidget);
+      expect(find.text('プライバシーポリシー'), findsOneWidget);
+
+      // 利用規約タップで利用規約画面へ遷移
+      await tester.ensureVisible(find.text('利用規約'));
+      await tester.tap(find.text('利用規約'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scuba Life 利用規約'), findsOneWidget);
+      expect(find.text('第3条（ダイビングの安全および自己責任に関する重要事項）'), findsOneWidget);
+    });
+
+    testWidgets('ProfilePage: 利用規約とプライバシーポリシーのリストタイルが表示され画面遷移できること',
+        (WidgetTester tester) async {
+      const initialUser = UserAccount(
+        id: 'user-legal-test',
+        email: 'legal.test@example.com',
+        displayName: '規約確認ダイバー',
+      );
+      final loggedInRepo = InMemoryAuthRepository(initialUser: initialUser);
+      final fakeUserRepo = InMemoryUserRepository(initialUsers: {
+        initialUser.id: initialUser,
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(loggedInRepo),
+            userRepositoryProvider.overrideWithValue(fakeUserRepo),
+          ],
+          child: const MaterialApp(
+            home: ProfilePage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 利用規約・プライバシーポリシーのタイルが表示されていること
+      final termsTile = find.widgetWithText(ListTile, '利用規約');
+      final privacyTile = find.widgetWithText(ListTile, 'プライバシーポリシー');
+      expect(termsTile, findsOneWidget);
+      expect(privacyTile, findsOneWidget);
+
+      // プライバシーポリシータップで画面遷移
+      await tester.ensureVisible(privacyTile);
+      await tester.tap(privacyTile);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scuba Life プライバシーポリシー'), findsOneWidget);
+      expect(find.text('5. データの保持期間とアカウント削除（退会）'), findsOneWidget);
+
+      loggedInRepo.dispose();
+      fakeUserRepo.dispose();
+    });
+
+    testWidgets('TermsOfServicePage & PrivacyPolicyPage: スタンドアロン描画確認',
+        (WidgetTester tester) async {
+      // 1. 利用規約画面
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: TermsOfServicePage(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('利用規約'), findsOneWidget);
+      expect(find.text('第1条（はじめに）'), findsOneWidget);
+
+      // 2. プライバシーポリシー画面
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: PrivacyPolicyPage(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('プライバシーポリシー'), findsOneWidget);
+      expect(find.text('1. はじめに'), findsOneWidget);
     });
   });
 }

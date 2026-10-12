@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/auth_controller.dart';
+import 'terms_of_service_page.dart';
+import 'privacy_policy_page.dart';
 
 /// アカウント新規登録画面
 class SignUpPage extends ConsumerStatefulWidget {
@@ -221,7 +223,67 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 20),
+
+                      // 利用規約・プライバシーポリシー案内 (Wrapで横溢れ防止)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              '登録することで、',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const TermsOfServicePage(),
+                                ),
+                              ),
+                              child: Text(
+                                '利用規約',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              ' および ',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const PrivacyPolicyPage(),
+                                ),
+                              ),
+                              child: Text(
+                                'プライバシーポリシー',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              ' に同意したものとみなされます。',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
 
                       // 新規登録ボタン
                       FilledButton(

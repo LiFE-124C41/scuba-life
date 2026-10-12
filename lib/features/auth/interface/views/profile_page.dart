@@ -5,6 +5,8 @@ import '../../domain/entities/user_account.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/user_profile_controller.dart';
 import 'widgets/edit_diver_profile_dialog.dart';
+import 'terms_of_service_page.dart';
+import 'privacy_policy_page.dart';
 
 /// アカウント設定・プロフィール画面
 class ProfilePage extends ConsumerWidget {
@@ -361,9 +363,46 @@ class ProfilePage extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 16),
 
-                      // 4. ログアウトボタン
+                      // 4. アプリ情報 & 法的文書
+                      Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.description_outlined),
+                              title: const Text('利用規約'),
+                              trailing: const Icon(Icons.chevron_right, size: 20),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const TermsOfServicePage(),
+                                ),
+                              ),
+                            ),
+                            const Divider(height: 1),
+                            ListTile(
+                              leading: const Icon(Icons.privacy_tip_outlined),
+                              title: const Text('プライバシーポリシー'),
+                              trailing: const Icon(Icons.chevron_right, size: 20),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const PrivacyPolicyPage(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // 5. ログアウトボタン
                       OutlinedButton.icon(
                         onPressed: isLoading ? null : () => _showSignOutDialog(context, ref),
                         style: OutlinedButton.styleFrom(
