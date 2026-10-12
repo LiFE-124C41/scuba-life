@@ -1,0 +1,38 @@
+{
+  // VS Code / 派生エディタ用 Flutter 起動・デバッグ設定
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Scuba Life (Debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "Scuba Life (Profile)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "Scuba Life (Release)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "Flutter: All Tests",
+      "request": "launch",
+      "type": "dart",
+      "codeLens": {
+        "for": [
+          "run-test",
+          "run-test-file"
+        ]
+      },
+      "program": "test/"
+    }
+  ]
+}
