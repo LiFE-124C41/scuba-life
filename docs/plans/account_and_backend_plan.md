@@ -230,24 +230,182 @@ gantt
     README更新 & リリース確認                 :m5_2, after m5_1, 3d
 ```
 
-### マイルストーン詳細一覧
+### マイルストーン詳細一覧 & 進捗状況
 
-| マイルストーン | 期間目安 | 主なタスク | 完了基準（Definition of Done） |
-| :--- | :--- | :--- | :--- |
-| **M1: Firebase環境構築 & セキュリティルール策定** | 1週間 | - Firebaseコンソールでのプロジェクト作成<br>- `flutterfire configure` によるAndroid/iOS接続設定<br>- Firestore コレクション設計 & セキュリティルール作成<br>- Google Cloud Console でのOAuthクライアント設定 | Firebase CLIおよびエミュレータ/実環境で接続が通り、セキュリティルールがテストできること。 |
-| **M2: 認証機能の実装（メール/PW + Google）** | 1.5週間 | - `features/auth` のドメイン/ユースケース/インフラ/UI実装<br>- メールアドレス登録・ログイン・ログアウト<br>- Googleサインイン連携<br>- ログイン状態によるアプリ起点ルーティング制御<br>- Riverpod Notifierのユニットテスト作成 | 新規ユーザー登録、ログイン、Google連携、ログアウトが実機/エミュレータでスムーズに行えること。 |
-| **M3: 各種データのクラウド永続化（Firestore同期）** | 2週間 | - `FirestoreDiveLogRepository`<br>- `FirestoreGearRepository`<br>- `FirestoreScheduleRepository`<br>- `FirestoreDiveSpotRepository`<br>- リポジトリProviderのFirestore版への差し替え | ログ登録や機材変更を行うと即座にFirestoreに反映され、別端末・再起動後もデータが完全に復元されること。 |
-| **M4: Appleサインイン追加 & オフライン最適化** | 1週間 | - Apple Sign-In の実装（iOS審査必須対応）<br>- Firestore のローカルキャッシュ永続化検証<br>- 機内モード（圏外）での読み書き動作確認 | iOSでAppleサインインが動作し、機内モード時でもアプリがクラッシュせず直前のログを閲覧・追記できること。 |
-| **M5: アカウント管理・セキュリティ監査・公開準備** | 1週間 | - アカウント削除機能（Apple/Googleガイドライン準拠）<br>- パスワード再設定メール送信機能<br>- 利用規約・プライバシーポリシー画面<br>- README の機能一覧・設計セクション更新 | アカウント削除を含む全規約対応が完了し、READMEが最新状態に同期され、テストがオールグリーンであること。 |
+| マイルストーン | 進捗 | 主なタスク | 完了基準（Definition of Done） |
+| :--- | :---: | :--- | :--- |
+| **M1: Firebase環境構築 & セキュリティルール策定** | **【完了 ✅】** | - Firebaseコンソールでのプロジェクト作成 (`scuba-life-a29fb`)<br>- `flutterfire configure` によるAndroid/iOS接続設定<br>- Firestore コレクション設計 & セキュリティルール作成・デプロイ<br>- Android デバッグ SHA-1 / SHA-256 フィンガープリント登録<br>- 機密ファイル（`firebase_options.dart` 等）の `.gitignore` 除外 & `.example` テンプレート整備 | Firebase CLIおよび実環境で接続が通り、セキュリティルールが本番デプロイ済みであること。 |
+| **M2: 認証機能の実装（メール/PW + Google SSO）** | **【完了 ✅】** | - `features/auth` Clean Architecture 完全準拠実装<br>- メールアドレス登録・ログイン・ログアウト<br>- Googleサインイン / Google SSO 新規登録<br>- パスワードマネージャー（Bitwarden等）Autofill対応<br>- ログイン状態によるアプリ起点ルーティング制御<br>- Riverpod Notifier & UseCase 単体テスト作成（全155件パス） | 新規ユーザー登録、ログイン、Google SSO、ログアウトが実機で動作確認済みであること。 |
+| **M2.5: ユーザープロファイル連携 & Cカード情報保存** | **【完了 ✅】** | - Firestore `users/{userId}` 初期ドキュメントの自動生成 (upsert)<br>- Cカード情報（指導団体: PADI等、ランク: OW/AOW等、カード番号、経験本数オフセット）の編集・保存<br>- プロフィール画面（`ProfilePage`）拡張および編集ダイアログ実装<br>- UseCase・UI・小型画面（360px）レスポンシブテスト作成（全162件パス） | プロフィール編集内容が Firestore に永続化され、アプリ再起動後も正しく復元されること。 |
+| **M3: 各種データのクラウド永続化（Firestore同期）** | **【次回着手】** | - `FirestoreDiveLogRepository` (`/users/{userId}/dive_logs`)<br>- `FirestoreGearRepository` (`/users/{userId}/gear_items`)<br>- `FirestoreScheduleRepository` (`/users/{userId}/dive_schedules`)<br>- `FirestoreDiveSpotRepository` (`/dive_spots`, `favorite_spots`)<br>- リポジトリProviderのFirestore版への差し替え | ログ登録や機材変更を行うと即座にFirestoreに反映され、別端末・再起動後もデータが完全に復元されること。 |
+| **M4: Appleサインイン追加 & オフライン最適化** | **【予定】** | - Apple Sign-In の実装（iOS審査必須対応）<br>- Firestore のローカルキャッシュ永続化検証<br>- 機内モード（圏外）での読み書き動作確認 | iOSでAppleサインインが動作し、機内モード時でもアプリがクラッシュせず直前のログを閲覧・追記できること。 |
+| **M5: アカウント削除・規約対応・本番準備** | **【予定】** | - アカウント削除機能（Apple/Googleガイドライン準拠）<br>- パスワード再設定メール送信機能の実機検証<br>- 利用規約・プライバシーポリシー画面<br>- README の機能一覧・設計セクション更新 | アカウント削除を含む全規約対応が完了し、READMEが最新状態に同期され、テストがオールグリーンであること。 |
 
 ---
 
-## 6. 次のアクション（M1の着手に向けて）
+## 6. 現在の実装状況詳細（実績）
 
-M1の具体的な着手にあたり、以下の準備を行います：
-1. **Firebase プロジェクトの用意**:
-   - Googleアカウントにて Firebase Console でプロジェクトを作成（または既存プロジェクトを指定）
-2. **FlutterFire CLI の実行準備**:
-   - `firebase-tools` および `flutterfire_cli` のインストール
-3. **必要なパッケージの追加 (`pubspec.yaml`)**:
-   - `firebase_core`, `firebase_auth`, `cloud_firestore`, `google_sign_in`, `sign_in_with_apple`
+2026年10月時点の実装実績は以下の通りです。Clean Architecture および強固なセキュリティ設計に基づき、基盤からUIまで堅牢に実装されています。
+
+### 1. インフラ & 環境設定（M1実績）
+- **Firebase プロジェクト**: `scuba-life-a29fb`
+- **Android 設定**:
+  - パッケージ名: `com.life_124c41.scuba_life` (App ID: `1:37794312799:android:c7583980414fa79d3c61ea`)
+  - デバッグ証明書 SHA-1 (`6F:A9:83:24:6C:82:27:98:CD:A4:40:EF:93:0B:9C:73:65:C9:46:4D`) および SHA-256 を Firebase CLI 経由で登録完了。
+- **iOS 設定**:
+  - Bundle Identifier: Appleの命名規則（アンダースコア禁止）に準拠し `com.life-124c41.scuba-life` (App ID: `1:37794312799:ios:b2ee25516922467f3c61ea`) として登録。
+  - OAuth クライアントIDおよび反転URLスキームを `Info.plist` に設定完了。
+- **機密情報の保護 & セキュリティポリシー**:
+  - リポジトリに機密・環境固有ファイル（`firebase.json`, `.firebaserc`, `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`）がコミットされないよう `.gitignore` を設定。
+  - 公開・CIビルド用の安全なテンプレートファイル（`.example`）を配備。
+  - `lib/main.dart` での Firebase 初期化時、設定ファイルが存在しない環境でも安全にフォールバック起動する設計を導入。
+- **Cloud Firestore セキュリティルール**:
+  - `/users/{userId}` ドキュメントおよびその配下のサブコレクション（`match /users/{userId} { match /{document=**} }`）へのアクセスを本人の認証トークン（`request.auth.uid == userId`）に限定するセキュリティルール（`firestore.rules`）を策定。
+
+### 2. 認証機能基盤（M2実績）
+Clean Architecture に基づき、ビジネスロジックをフレームワークから完全に分離して実装：
+
+- **Domain 層 (Pure Dart)**:
+  - `UserAccount`: 認証ユーザーの基本エンティティ（`uid`, `email`, `displayName`, `photoUrl`）。
+  - `AuthFailure`: 業務エラーの網羅的モデリング（パスワード強度不足、メール重複、不正メール形式、ユーザー不在、パスワード不一致、Googleポップアップキャンセル、ネットワークエラー、要再ログイン、不明エラー）。
+  - `AuthRepository`: 認証操作の抽象インターフェース。
+- **UseCase 層 (Pure Dart)**:
+  - `SignInWithEmail`: メール/パスワードによるログイン。
+  - `SignUpWithEmail`: メール/パスワードによる新規アカウント作成。
+  - `SignInWithGoogle`: Googleアカウントによるサインイン/新規登録。
+  - `SignOut`: サインアウト。
+  - `SendPasswordReset`: パスワード再設定メール送信。
+  - `WatchAuthState`: 認証状態の Stream 監視。
+  - `GetCurrentUser`: 現在のログインユーザー取得。
+- **Infrastructure 層**:
+  - `FirebaseAuthDataSource`: `firebase_auth` SDK および `google_sign_in` SDK をラップし、テスタビリティを担保。
+  - `FirebaseAuthRepository`: Firebaseの例外（`FirebaseAuthException`）をドメイン例外（`AuthFailure`）へ安全に変換・マッピング。
+  - `InMemoryAuthRepository`: オフライン環境やユニットテスト用のスタブ実装。
+- **Interface / UI 層 (Riverpod)**:
+  - `AuthStateNotifier` (`authStateProvider`): 認証状態（`AsyncValue<UserAccount?>`）のリアクティブ管理。
+  - `AuthActionController` (`authActionControllerProvider`): 認証アクション実行中のローディング・エラー状態の管理。
+  - `SignInPage`: サインイン画面（メールログイン、Google SSO、パスワード再設定導線）。
+  - `SignUpPage`: 新規登録画面（メール会員登録、Google SSO 新規登録ボタン）。
+  - `PasswordResetPage`: パスワード再設定画面。
+  - `ProfilePage`: ユーザー情報表示およびログアウトボタン。
+- **UX & レスポンシブ最適化**:
+  - **パスワードマネージャー連携**: `AutofillGroup`、`autofillHints`（`email`, `password`, `newPassword`）、および完了時の `TextInput.finishAutofillContext()` を実装し、Bitwarden や 1Password、Googleパスワードマネージャー等の自動入力・保存に対応。
+  - **レスポンシブ設計**: `Wrap` や `SingleChildScrollView` を活用し、幅 350〜370px の端末（2376×968端末等）でもオーバーフローを起こさない堅牢なレイアウトを実装。
+- **アプリ全体との統合**:
+  - `lib/app/app.dart` で `authStateProvider` の状態に応じて初期画面を自動切り替え（未ログイン時: `SignInPage`、ログイン時: `DiveLogPage`）。
+  - ログブック画面（`DiveLogPage`）の AppBar にプロフィール画面（`ProfilePage`）への遷移アイコンを配備。
+
+### 3. ユーザープロファイル連携 & Cカード情報管理（M2.5実績）
+- **ドメインモデル & スキーマ策定**:
+  - `UserAccount` エンティティに `certificationOrg`（指導団体: PADI, NAUI, SSI, BSAC, CMAS 等）、`certificationLevel`（認定ランク: OW, AOW, RED, MSD, DM, INST 等）、`cCardNumber`（Cカード番号）、`totalDivesOffset`（開始前の経験潜水本数）を追加。
+  - 指導団体・認定ランクのプリセット定数クラス `DiverCertification` を作成。
+- **クリーンアーキテクチャ階層構造**:
+  - `domain`: `UserRepository`（Pure Dart 抽象インターフェース）
+  - `usecase`: `GetUserProfile`, `WatchUserProfile`, `UpdateUserProfile`, `SyncInitialProfile`（Pure Dart）
+  - `infrastructure`: `FirestoreUserRepository`（`/users/{userId}` への upsert, serverTimestamp）、`InMemoryUserRepository`（テスト・オフライン用）
+  - `interface`: `currentUserProfileProvider`（ログインユーザー検知時の自動初期同期 & リアルタイム監視）、`userProfileControllerProvider`（プロファイル更新 Notifier）
+- **UI & レスポンシブ拡張**:
+  - `ProfilePage` に「Cカード・ダイバー情報」カードを追加（指導団体バッジ、認定ランク、カード番号、経験本数）。
+  - 未登録時の親切なガイダンス表示および登録導線ボタン。
+  - `EditDiverProfileDialog`（モーダル編集ダイアログ）の実装。Dropdown の `isExpanded: true` や `ConstrainedBox` により幅 360px 小型端末でも堅牢に動作。
+- **テスト品質**:
+  - 全 **162 件** のユニットテスト・ウィジェットテストがオールグリーン（`flutter test` パス）。
+  - 静的解析エラー 0 件（`flutter analyze` 0 issues）。
+
+---
+
+## 7. 今後の対応予定（ネクストアクション詳細）
+
+今後の実装は以下のステップで順次進行します。
+
+```mermaid
+flowchart TD
+    M1_M2["【完了 ✅】<br>M1: 基盤構築<br>M2: メール & Google 認証"] --> M2_5["【完了 ✅】<br>M2.5: ユーザープロファイル連携<br>& Cカード情報保存"]
+    M2_5 --> M3["【次回着手: M3】<br>各種データの Firestore クラウド同期<br>(ログ / 機材 / 予定 / スポット)"]
+    M3 --> M4["【M4】<br>Apple サインイン追加<br>& オフラインキャッシュ最適化"]
+    M4 --> M5["【M5】<br>アカウント削除機能<br>& ストア公開準備"]
+```
+
+### ステップ 1: 【次回着手】各種データの Cloud Firestore クラウド同期（M3）
+
+現在アプリ内でインメモリ保持されている各ドメインデータを、ユーザー固有のサブコレクションへ保存・同期します。
+
+1. **`FirestoreDiveLogRepository` の実装**:
+   - コレクションパス: `/users/{userId}/dive_logs/{logId}`
+   - 潜水ログの作成・更新・削除・一覧取得（日付降順ストリーム）。
+   - プロファイル内の `totalDivesOffset`（過去本数）と合算した累計ダイブ番号の自動計算。
+2. **`FirestoreGearRepository` の実装**:
+   - コレクションパス: `/users/{userId}/gear_items/{gearId}`
+   - マイ機材の登録・編集・オーバーホール（OH）情報管理。
+3. **`FirestoreScheduleRepository` の実装**:
+   - コレクションパス: `/users/{userId}/dive_schedules/{scheduleId}`
+   - トリップ予定、持ち物チェックリストの同期。
+4. **`FirestoreDiveSpotRepository` の実装**:
+   - 共通マスタ: `/dive_spots/{spotId}`
+   - ユーザーお気に入り: `/users/{userId}/favorite_spots/{spotId}`
+5. **Provider 切り替え & 移行戦略**:
+   - `diveLogRepositoryProvider` などの DI 定義を `Firestore...Repository` に差し替え。
+   - テスト時は引き続き `InMemory...` を注入できるように設計。
+
+---
+
+### ステップ 2: ストア公開必須要件 & オフライン最適化（M4 & M5）
+
+1. **Apple でサインイン（Sign in with Apple）の実装（M4）**:
+   - iOS App Store 審査ガイドライン 4.8（サードパーティログインを提供するアプリは Apple サインインの提供が必須）に対応。
+   - `sign_in_with_apple` パッケージ連携。
+2. **オフライン永続化キャッシュ検証（M4）**:
+   - 電波が圏外になる洋上・ボート上でのログ入力・機材チェックを可能にするため、Firestore のオフライン永続化（Local Cache）の動作検証を実施。
+3. **アカウント削除（退会）機能の実装（M5）**:
+   - Apple / Google 審査ガイドライン準拠の必須要件。
+   - `ProfilePage` からアカウント削除ダイアログを起動。
+   - Firebase Authentication ユーザー削除 ＋ Firestore 内の `/users/{userId}` および全サブコレクションの一括削除処理を実装。
+4. **パスワードリセットメールの実機検証（M5）**:
+   - パスワード再設定画面（`PasswordResetPage`）からのメール送信および再設定リンクの疎通確認。
+5. **法的要件 & リリースドキュメント（M5）**:
+   - 利用規約・プライバシーポリシー画面への導線追加。
+   - [README.md](file:///e:/source/repos/scuba-life/README.md) の完全同期。
+
+---
+
+## 8. 実装タスク・進捗チェックリスト
+
+開発の進捗に合わせて本チェックリストを更新します。
+
+- [x] **M1: Firebase環境構築**
+  - [x] Firebase プロジェクト作成 (`scuba-life-a29fb`)
+  - [x] Android / iOS 設定 & 証明書登録
+  - [x] 機密ファイルの Git 管理外設定 & テンプレート配備
+  - [x] Firestore セキュリティルールの本番デプロイ
+- [x] **M2: 認証機能基盤**
+  - [x] `features/auth` Clean Architecture 設計・実装
+  - [x] メール/パスワード認証 (サインアップ / ログイン / ログアウト)
+  - [x] Google SSO 認証 (サインアップ / ログイン)
+  - [x] パスワードマネージャー (Bitwarden等) 自動入力連携
+  - [x] アプリ起点ルーティング連携 & プロフィール画面導線
+  - [x] 全テストパス (155/155 tests passed) & 静的解析エラー0件
+- [x] **M2.5: ユーザープロファイル & Cカード情報保存**
+  - [x] Firestore `/users/{userId}` スキーマ策定
+  - [x] `UserAccount` ドメインモデル拡張（指導団体・ランク・カード番号・本数オフセット）
+  - [x] `DiverCertification` 定数クラス作成
+  - [x] `UserRepository` 抽象インターフェース & UseCase 作成
+  - [x] `FirestoreUserRepository` & `InMemoryUserRepository` 実装
+  - [x] サインアップ・ログイン時の初期ドキュメント自動生成 (upsert)
+  - [x] `ProfilePage` に Cカード情報表示 & 編集ダイアログ（`EditDiverProfileDialog`）追加
+  - [x] 小型画面（幅360px）レスポンシブ対応
+  - [x] プロファイル機能の単体 & ウィジェットテスト作成（全162件テスト合格）
+- [ ] **M3: 各種データの Firestore 同期**
+  - [ ] `FirestoreDiveLogRepository` 実装 & DI 切り替え
+  - [ ] `FirestoreGearRepository` 実装 & DI 切り替え
+  - [ ] `FirestoreScheduleRepository` 実装 & DI 切り替え
+  - [ ] `FirestoreDiveSpotRepository` 実装 & DI 切り替え
+- [ ] **M4: Appleサインイン & オフライン検証**
+  - [ ] `sign_in_with_apple` 実装
+  - [ ] 圏外（オフライン）キャッシュの動作テスト
+- [ ] **M5: アカウント削除 & 本番準備**
+  - [ ] アカウント完全削除（退会）機能
+  - [ ] パスワードリセットメール疎通確認
+  - [ ] README更新 & ストア申請準備
+
+
+

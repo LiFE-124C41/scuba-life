@@ -11,6 +11,10 @@ class UserAccount {
   final String? displayName;
   final String? photoUrl;
   final bool isEmailVerified;
+  final String? certificationOrg;
+  final String? certificationLevel;
+  final String? cCardNumber;
+  final int totalDivesOffset;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -20,6 +24,10 @@ class UserAccount {
     this.displayName,
     this.photoUrl,
     this.isEmailVerified = false,
+    this.certificationOrg,
+    this.certificationLevel,
+    this.cCardNumber,
+    this.totalDivesOffset = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -30,6 +38,10 @@ class UserAccount {
     String? displayName,
     String? photoUrl,
     bool? isEmailVerified,
+    String? certificationOrg,
+    String? certificationLevel,
+    String? cCardNumber,
+    int? totalDivesOffset,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -39,6 +51,10 @@ class UserAccount {
       displayName: displayName ?? this.displayName,
       photoUrl: photoUrl ?? this.photoUrl,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+      certificationOrg: certificationOrg ?? this.certificationOrg,
+      certificationLevel: certificationLevel ?? this.certificationLevel,
+      cCardNumber: cCardNumber ?? this.cCardNumber,
+      totalDivesOffset: totalDivesOffset ?? this.totalDivesOffset,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -53,7 +69,11 @@ class UserAccount {
           email == other.email &&
           displayName == other.displayName &&
           photoUrl == other.photoUrl &&
-          isEmailVerified == other.isEmailVerified;
+          isEmailVerified == other.isEmailVerified &&
+          certificationOrg == other.certificationOrg &&
+          certificationLevel == other.certificationLevel &&
+          cCardNumber == other.cCardNumber &&
+          totalDivesOffset == other.totalDivesOffset;
 
   @override
   int get hashCode =>
@@ -61,9 +81,13 @@ class UserAccount {
       email.hashCode ^
       displayName.hashCode ^
       photoUrl.hashCode ^
-      isEmailVerified.hashCode;
+      isEmailVerified.hashCode ^
+      certificationOrg.hashCode ^
+      certificationLevel.hashCode ^
+      cCardNumber.hashCode ^
+      totalDivesOffset.hashCode;
 
   @override
   String toString() =>
-      'UserAccount(id: $id, email: $email, displayName: $displayName, verified: $isEmailVerified)';
+      'UserAccount(id: $id, email: $email, displayName: $displayName, verified: $isEmailVerified, org: $certificationOrg, level: $certificationLevel, cCard: $cCardNumber, offset: $totalDivesOffset)';
 }

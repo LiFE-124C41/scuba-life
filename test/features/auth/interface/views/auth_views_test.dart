@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scuba_life/features/auth/domain/entities/user_account.dart';
 import 'package:scuba_life/features/auth/infrastructure/repositories/in_memory_auth_repository.dart';
+import 'package:scuba_life/features/auth/infrastructure/repositories/in_memory_user_repository.dart';
 import 'package:scuba_life/features/auth/interface/controllers/auth_controller.dart';
+import 'package:scuba_life/features/auth/interface/controllers/user_profile_controller.dart';
 import 'package:scuba_life/features/auth/interface/views/password_reset_page.dart';
 import 'package:scuba_life/features/auth/interface/views/profile_page.dart';
 import 'package:scuba_life/features/auth/interface/views/sign_in_page.dart';
@@ -159,11 +161,13 @@ void main() {
           isEmailVerified: true,
         ),
       );
+      final fakeUserRepo = InMemoryUserRepository();
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             authRepositoryProvider.overrideWithValue(loggedInRepo),
+            userRepositoryProvider.overrideWithValue(fakeUserRepo),
           ],
           child: const MaterialApp(
             home: ProfilePage(),
@@ -179,7 +183,13 @@ void main() {
       expect(find.text('メール確認済'), findsOneWidget);
       expect(find.text('user-xyz'), findsOneWidget);
 
+      // Assert: 初期未登録ガイダンス
+      expect(find.text('Cカード・ダイバー情報'), findsOneWidget);
+      expect(find.text('Cカード（ライセンス）情報を登録すると、ログ記録やスキルシートに反映されます。'),
+          findsOneWidget);
+
       // Act: ログアウトボタン押下
+      await tester.ensureVisible(find.widgetWithText(OutlinedButton, 'ログアウト'));
       await tester.tap(find.widgetWithText(OutlinedButton, 'ログアウト'));
       await tester.pumpAndSettle();
 
@@ -188,6 +198,79 @@ void main() {
       expect(find.text('アカウントからログアウトしますか？'), findsOneWidget);
 
       loggedInRepo.dispose();
+      fakeUserRepo.dispose();
+    });
+
+    testWidgets('ProfilePage: Cカード登録済み情報の表示と編集ダイアログによる更新（小型画面幅360px対応）',
+        (WidgetTester tester) async {
+      // 幅360px（小型端末）を設定
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      // Arrange
+      const initialUser = UserAccount(
+        id: 'diver-c-card',
+        email: 'padi.diver@example.com',
+        displayName: '波乗りダイバー',
+        certificationOrg: 'PADI',
+        certificationLevel: 'AOW (アドヴァンスド)',
+        cCardNumber: '987654321',
+        totalDivesOffset: 45,
+      );
+      final loggedInRepo = InMemoryAuthRepository(initialUser: initialUser);
+      final fakeUserRepo = InMemoryUserRepository(initialUsers: {
+        initialUser.id: initialUser,
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(loggedInRepo),
+            userRepositoryProvider.overrideWithValue(fakeUserRepo),
+          ],
+          child: const MaterialApp(
+            home: ProfilePage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Assert: Cカード情報が表示されていること
+      expect(find.text('Cカード・ダイバー情報'), findsOneWidget);
+      expect(find.text('指導団体'), findsOneWidget);
+      expect(find.text('PADI'), findsWidgets);
+      expect(find.text('認定ランク'), findsOneWidget);
+      expect(find.text('AOW (アドヴァンスド)'), findsOneWidget);
+      expect(find.text('Cカード番号'), findsOneWidget);
+      expect(find.text('987654321'), findsOneWidget);
+      expect(find.text('開始前の経験本数'), findsOneWidget);
+      expect(find.text('45 本'), findsOneWidget);
+
+      // Act: 「編集」ボタンタップ
+      await tester.tap(find.widgetWithText(TextButton, '編集'));
+      await tester.pumpAndSettle();
+
+      // Assert: 編集ダイアログが開いていること
+      expect(find.text('ダイバー情報・Cカード'), findsOneWidget);
+
+      // Act: 表示名を変更
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'ダイバー名 / 表示名'), 'マスターダイバー');
+      // 保存ボタン押下
+      await tester.ensureVisible(find.widgetWithText(FilledButton, '保存'));
+      await tester.tap(find.widgetWithText(FilledButton, '保存'));
+      await tester.pumpAndSettle();
+
+      // Assert: ダイアログが閉じ、SnackBarと更新された表示名が表示されること
+      expect(find.text('ダイバー情報を更新しました'), findsOneWidget);
+      expect(find.text('マスターダイバー'), findsOneWidget);
+
+      loggedInRepo.dispose();
+      fakeUserRepo.dispose();
     });
   });
 }

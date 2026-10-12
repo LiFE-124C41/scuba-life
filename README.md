@@ -103,16 +103,21 @@
   - 生き物カードのタップにより、ボトムシートで詳細なサマリー（出現月一覧、出会ったポイント一覧、最大遭遇深度）および過去の遭遇ログタイムラインを展開。
   - 各ログの日付、ポイント名、最大水深、潜水時間、水温、透明度、メモを確認でき、「ログを見る」ボタンから対象のダイビングログ詳細（`DiveLogDetailPage`）へ直接ジャンプ可能。
 
-### 5. アカウント・認証管理（Authentication）
+### 6. アカウント・認証・ダイバープロファイル管理（Authentication & Profile）
 - **安全なアカウント管理（Firebase Authentication連携）**:
   - **メール/パスワード認証**: バリデーション付きのサインイン・新規登録フォーム。
-  - **Googleサインイン連携**: Googleアカウントを利用したワンタップ認証に対応。
+  - **Googleサインイン連携**: Googleアカウントを利用したワンタップ認証（Google SSO）に対応。
+  - **パスワードマネージャー連携**: Bitwarden や 1Password、Googleパスワードマネージャー等の自動入力（`AutofillGroup` / `autofillHints`）に対応。
   - **パスワード再設定**: 登録アドレスへのリセットメール送信に対応。
+- **ダイバープロファイル & Cカード（ライセンス）管理（Cloud Firestore連携）**:
+  - **Cカード認定情報の保存**: 指導団体（PADI, NAUI, SSI, BSAC, CMAS 等）や認定ランク（OW, AOW, RED, MSD, DM, INST 等）、Cカード認定番号をクラウド（`/users/{userId}`）で一元管理。
+  - **アプリ導入前の経験本数（オフセット）設定**: アプリ開始前の潜水本数を登録可能。今後のログ集計や通算ダイブ本数に自動合算。
+  - **ダイバー情報編集モーダル（`EditDiverProfileDialog`）**: プロフィール画面からいつでもニックネームやCカード情報を更新可能。
 - **認証状態に応じた画面ルーティング**:
   - 未ログイン時はサインイン画面（`SignInPage`）を表示し、ログイン完了で自動的にメインナビゲーション画面へ遷移。
   - ログブック画面右上からアカウント設定（`ProfilePage`）にアクセス可能。
 - **プロフィール & ログアウト管理（`ProfilePage`）**:
-  - ログイン中ダイバーの表示名、メールアドレス、UID、同期状態バッジを表示。
+  - ログイン中ダイバーのアバター、表示名、メールアドレス、UID、同期状態バッジを表示。
   - 確認ダイアログ付きの安全なログアウト機能。
 
 ---
@@ -222,28 +227,40 @@ lib/
 │       │           └── overhaul_status_badge.dart # OHステータスバッジ
 │       └── infrastructure/                 # インフラ層
 │           └── repositories/in_memory_gear_repository.dart
-│   └── auth/                               # ⑥ アカウント・認証機能（Firebase Auth / Google）
-│       ├── domain/                         # ドメイン層（UserAccount, AuthFailure, AuthRepository IF）
-│       │   ├── entities/user_account.dart
-│       │   ├── errors/auth_failure.dart
-│       │   └── repositories/auth_repository.dart
-│       ├── usecase/                        # ユースケース層（Pure Dart）
+│   └── auth/                               # ⑥ アカウント・認証・プロファイル機能 (Firebase Auth & Firestore)
+│       ├── domain/                         # ドメイン層 (Pure Dart)
+│       │   ├── entities/user_account.dart  # ユーザー情報・Cカード情報
+│       │   ├── entities/diver_certification.dart # 指導団体・ランク定数
+│       │   ├── errors/auth_failure.dart    # 認証エラー定義
+│       │   ├── repositories/auth_repository.dart # 認証リポジトリIF
+│       │   └── repositories/user_repository.dart # プロファイルリポジトリIF
+│       ├── usecase/                        # ユースケース層 (Pure Dart)
 │       │   ├── sign_in_with_email.dart
 │       │   ├── sign_up_with_email.dart
 │       │   ├── sign_in_with_google.dart
 │       │   ├── sign_out.dart
 │       │   ├── send_password_reset.dart
-│       │   └── watch_auth_state.dart
-│       ├── interface/                      # UI・状態管理（Riverpod）
+│       │   ├── watch_auth_state.dart
+│       │   ├── get_user_profile.dart
+│       │   ├── watch_user_profile.dart
+│       │   ├── update_user_profile.dart
+│       │   └── sync_initial_profile.dart
+│       ├── interface/                      # UI・状態管理 (Riverpod)
 │       │   ├── controllers/auth_controller.dart
+│       │   ├── controllers/user_profile_controller.dart
 │       │   └── views/
 │       │       ├── sign_in_page.dart       # サインイン画面
 │       │       ├── sign_up_page.dart       # 新規登録画面
 │       │       ├── password_reset_page.dart# パスワード再設定画面
-│       │       └── profile_page.dart       # アカウント設定・ログアウト
-│       └── infrastructure/                 # インフラ層（Firebase Auth SDK, In-Memory）
+│       │       ├── profile_page.dart       # アカウント設定・Cカード表示
+│       │       └── widgets/
+│       │           └── edit_diver_profile_dialog.dart # Cカード編集モーダル
+│       └── infrastructure/                 # インフラ層 (Firebase SDK, In-Memory)
 │           ├── datasources/firebase_auth_datasource.dart
-│           └── repositories/firebase_auth_repository.dart
+│           ├── repositories/firebase_auth_repository.dart
+│           ├── repositories/firestore_user_repository.dart
+│           ├── repositories/in_memory_auth_repository.dart
+│           └── repositories/in_memory_user_repository.dart
 └── main.dart                               # エントリーポイント (Firebase初期化, ProviderScope)
 ```
 

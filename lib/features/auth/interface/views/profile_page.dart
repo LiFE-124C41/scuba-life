@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/entities/user_account.dart';
 import '../controllers/auth_controller.dart';
+import '../controllers/user_profile_controller.dart';
+import 'widgets/edit_diver_profile_dialog.dart';
 
 /// アカウント設定・プロフィール画面
 class ProfilePage extends ConsumerWidget {
@@ -34,11 +37,20 @@ class ProfilePage extends ConsumerWidget {
     }
   }
 
+  Future<void> _showEditProfileDialog(
+      BuildContext context, UserAccount user) async {
+    await showDialog<bool>(
+      context: context,
+      builder: (context) => EditDiverProfileDialog(user: user),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final authState = ref.watch(authStateProvider);
+    final profileAsync = ref.watch(currentUserProfileProvider);
     final actionState = ref.watch(authActionControllerProvider);
     final isLoading = actionState.isLoading;
 
@@ -47,12 +59,15 @@ class ProfilePage extends ConsumerWidget {
         title: const Text('アカウント設定'),
       ),
       body: authState.when(
-        data: (user) {
-          if (user == null) {
+        data: (authUser) {
+          if (authUser == null) {
             return const Center(
               child: Text('ログインしていません'),
             );
           }
+
+          // Firestore のプロファイルがあればそれを優先、取得中は Auth ユーザーで描画
+          final user = profileAsync.asData?.value ?? authUser;
 
           final displayName = user.displayName?.isNotEmpty == true
               ? user.displayName!
@@ -68,7 +83,7 @@ class ProfilePage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // プロフィールカード
+                      // 1. 基本プロフィールカード
                       Card(
                         elevation: 0,
                         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
@@ -110,7 +125,7 @@ class ProfilePage extends ConsumerWidget {
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 12),
-                              // 認証バッジ（Wrapで横溢れ防止）
+                              // 認証・ステータスバッジ（Wrapで横溢れ防止）
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 4,
@@ -118,7 +133,7 @@ class ProfilePage extends ConsumerWidget {
                                 children: [
                                   Chip(
                                     avatar: const Icon(
-                                      Icons.verified_user_outlined,
+                                      Icons.cloud_done_outlined,
                                       size: 16,
                                     ),
                                     label: const Text('クラウド同期中'),
@@ -133,15 +148,137 @@ class ProfilePage extends ConsumerWidget {
                                       label: const Text('メール確認済'),
                                       visualDensity: VisualDensity.compact,
                                     ),
+                                  if (user.certificationOrg != null)
+                                    Chip(
+                                      avatar: const Icon(
+                                        Icons.card_membership_outlined,
+                                        size: 16,
+                                      ),
+                                      label: Text(user.certificationOrg!),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
                                 ],
                               ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
-                      // アカウント詳細情報リスト
+                      // 2. ダイバー情報・Cカード情報カード
+                      Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // ヘッダー行 (タイトル + 編集ボタン)
+                              Row(
+                                children: [
+                                  Icon(Icons.badge_outlined, color: colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Cカード・ダイバー情報',
+                                      style: theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: () => _showEditProfileDialog(context, user),
+                                    icon: const Icon(Icons.edit_outlined, size: 16),
+                                    label: const Text('編集'),
+                                    style: TextButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 24),
+
+                              if (user.certificationOrg == null &&
+                                  user.certificationLevel == null) ...[
+                                // Cカード未登録時のガイダンス
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        color: colorScheme.primary,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Cカード（ライセンス）情報を登録すると、ログ記録やスキルシートに反映されます。',
+                                          style: theme.textTheme.bodySmall,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Center(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => _showEditProfileDialog(context, user),
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('Cカード情報を設定する'),
+                                  ),
+                                ),
+                              ] else ...[
+                                // 登録済み情報の表示
+                                _buildInfoRow(
+                                  context,
+                                  icon: Icons.corporate_fare,
+                                  label: '指導団体',
+                                  value: user.certificationOrg ?? '未設定',
+                                ),
+                                const SizedBox(height: 12),
+                                _buildInfoRow(
+                                  context,
+                                  icon: Icons.military_tech_outlined,
+                                  label: '認定ランク',
+                                  value: user.certificationLevel ?? '未設定',
+                                ),
+                                if (user.cCardNumber != null &&
+                                    user.cCardNumber!.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  _buildInfoRow(
+                                    context,
+                                    icon: Icons.pin_outlined,
+                                    label: 'Cカード番号',
+                                    value: user.cCardNumber!,
+                                  ),
+                                ],
+                                const SizedBox(height: 12),
+                                _buildInfoRow(
+                                  context,
+                                  icon: Icons.scuba_diving_outlined,
+                                  label: '開始前の経験本数',
+                                  value: '${user.totalDivesOffset} 本',
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 3. アカウント詳細情報リスト
                       Card(
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -176,7 +313,7 @@ class ProfilePage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 32),
 
-                      // ログアウトボタン
+                      // 4. ログアウトボタン
                       OutlinedButton.icon(
                         onPressed: isLoading ? null : () => _showSignOutDialog(context, ref),
                         style: OutlinedButton.styleFrom(
@@ -206,6 +343,42 @@ class ProfilePage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('エラー: $err')),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 110,
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }
