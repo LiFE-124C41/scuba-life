@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../features/auth/interface/controllers/auth_controller.dart';
+import '../features/auth/interface/views/sign_in_page.dart';
 import '../features/logbook/interface/views/dive_log_page.dart';
 import '../features/marine_life/interface/views/marine_life_page.dart';
 import '../features/my_gear/interface/views/my_gear_page.dart';
 import '../features/schedule/interface/views/schedule_page.dart';
 
-class ScubaLifeApp extends StatelessWidget {
+class ScubaLifeApp extends ConsumerWidget {
   const ScubaLifeApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+
     return MaterialApp(
       title: 'Scuba Life',
       debugShowCheckedModeBanner: false,
@@ -19,7 +24,21 @@ class ScubaLifeApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
       ),
-      home: const MainNavigationScreen(),
+      home: authState.when(
+        data: (user) {
+          if (user != null) {
+            return const MainNavigationScreen();
+          } else {
+            return const SignInPage();
+          }
+        },
+        loading: () => const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+        error: (err, _) => const SignInPage(),
+      ),
     );
   }
 }
@@ -78,4 +97,3 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 }
-

@@ -9,6 +9,7 @@ import 'dive_log_detail_page.dart';
 import 'dive_log_form_page.dart';
 import 'dive_log_statistics_page.dart';
 import 'widgets/dive_log_summary_card.dart';
+import '../../../auth/interface/views/profile_page.dart';
 
 /// ログブック一覧画面（リスト表示 / マップ表示 切替対応）
 class DiveLogPage extends ConsumerStatefulWidget {
@@ -49,6 +50,17 @@ class _DiveLogPageState extends ConsumerState<DiveLogPage> {
                 _isMapView = !_isMapView;
                 _selectedLogForMap = null;
               });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: 'アカウント設定',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ProfilePage(),
+                ),
+              );
             },
           ),
         ],
