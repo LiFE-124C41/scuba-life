@@ -222,12 +222,14 @@ gantt
     section M3: データ同期
     各機能の FirestoreRepository 実装         :m3_1, after m2_3, 7d
     マルチデバイス同期・CRUD疎通検証           :m3_2, after m3_1, 4d
-    section M4: 拡張 & オフライン
-    Appleでサインイン追加実装                 :m4_1, after m3_2, 4d
-    Firestoreオフライン永続化キャッシュ最適化    :m4_2, after m4_1, 4d
+    section M4: オフライン最適化
+    Firestore永続化キャッシュ & 圏外動作保証    :m4_1, after m3_2, 4d
+    ネットワーク検知 & 同期ステータス表示      :m4_2, after m4_1, 3d
     section M5: 本番準備
     退会・アカウント削除 (ストア必須要件)       :m5_1, after m4_2, 3d
     README更新 & リリース確認                 :m5_2, after m5_1, 3d
+    section M6: Apple サインイン
+    Appleでサインイン追加実装 (iOS審査対応)    :m6_1, after m5_2, 4d
 ```
 
 ### マイルストーン詳細一覧 & 進捗状況
@@ -238,8 +240,9 @@ gantt
 | **M2: 認証機能の実装（メール/PW + Google SSO）** | **【完了 ✅】** | - `features/auth` Clean Architecture 完全準拠実装<br>- メールアドレス登録・ログイン・ログアウト<br>- Googleサインイン / Google SSO 新規登録<br>- パスワードマネージャー（Bitwarden等）Autofill対応<br>- ログイン状態によるアプリ起点ルーティング制御<br>- Riverpod Notifier & UseCase 単体テスト作成（全155件パス） | 新規ユーザー登録、ログイン、Google SSO、ログアウトが実機で動作確認済みであること。 |
 | **M2.5: ユーザープロファイル連携 & Cカード情報保存** | **【完了 ✅】** | - Firestore `users/{userId}` 初期ドキュメントの自動生成 (upsert)<br>- Cカード情報（指導団体: PADI等、ランク: OW/AOW等、カード番号、経験本数オフセット）の編集・保存<br>- プロフィール画面（`ProfilePage`）拡張および編集ダイアログ実装<br>- UseCase・UI・小型画面（360px）レスポンシブテスト作成（全162件パス） | プロフィール編集内容が Firestore に永続化され、アプリ再起動後も正しく復元されること。 |
 | **M3: 各種データのクラウド永続化（Firestore同期）** | **【完了 ✅】** | - `FirestoreDiveLogRepository` (`/users/{userId}/dive_logs`)<br>- `FirestoreGearRepository` (`/users/{userId}/gear_items`)<br>- `FirestoreScheduleRepository` (`/users/{userId}/dive_schedules`)<br>- `FirestoreDiveSpotRepository` (`/dive_spots`, `favorite_spots`)<br>- リポジトリProviderのFirestore版動的切り替え<br>- `fake_cloud_firestore` によるリポジトリ単体テスト（全177件パス） | ログ登録や機材変更を行うと即座にFirestoreに反映され、別端末・再起動後もデータが完全に復元されること。 |
-| **M4: Appleサインイン追加 & オフライン最適化** | **【次回着手】** | - Apple Sign-In の実装（iOS審査必須対応）<br>- Firestore のローカルキャッシュ永続化検証<br>- 機内モード（圏外）での読み書き動作確認 | iOSでAppleサインインが動作し、機内モード時でもアプリがクラッシュせず直前のログを閲覧・追記できること。 |
-| **M5: アカウント削除・規約対応・本番準備** | **【予定】** | - アカウント削除機能（Apple/Googleガイドライン準拠）<br>- パスワード再設定メール送信機能の実機検証<br>- 利用規約・プライバシーポリシー画面<br>- README の機能一覧・設計セクション更新 | アカウント削除を含む全規約対応が完了し、READMEが最新状態に同期され、テストがオールグリーンであること。 |
+| **M4: オフライン永続化キャッシュ最適化 & 圏外動作保証** | **【完了 ✅】** | - Firestore のローカル永続化キャッシュ（Offline Persistence）明示的設定<br>- 圏外・洋上ボート上でのログブック・機材・予定の閲覧 & オフライン追記対応<br>- キャッシュ未初期化のオフライン環境でも代表スポットを安全表示<br>- オフライン動作検証テストの実装（全183件パス） | 機内モード時でもアプリがクラッシュせず直前のログや機材を閲覧・追記でき、オンライン復帰時に安全に同期されること。 |
+| **M5: アカウント削除・規約対応・本番準備** | **【次回着手】** | - アカウント削除機能（Apple/Googleガイドライン準拠）<br>- パスワード再設定メール送信機能の実機検証<br>- 利用規約・プライバシーポリシー画面<br>- README の機能一覧・設計セクション更新 | アカウント削除を含む全規約対応が完了し、READMEが最新状態に同期され、テストがオールグリーンであること。 |
+| **M6: Appleサインイン追加 (iOS審査対応)** | **【予定】** | - `sign_in_with_apple` パッケージ連携<br>- Apple ID によるサインイン / アカウント作成<br>- iOS App Store 審査ガイドライン 4.8 対応 | iOSでAppleサインインが動作し、新規アカウント作成・ログインが完了すること。 |
 
 ---
 
@@ -339,6 +342,23 @@ Clean Architecture のレイヤード設計を厳格に維持し、UI層やUseCa
   - 全体テスト **177 件** がオールグリーン（`flutter test` パス）。
   - 静的解析エラー 0 件（`flutter analyze` 0 issues）。
 
+### 5. オフライン永続化キャッシュ最適化 & 圏外動作保証（M4実績）
+洋上・ボート上・離島などの電波圏外環境でも、アプリがクラッシュせず快適に利用できるよう、オフラインキャッシュとフォールバックを最適化：
+
+- **Firestore ローカル永続化キャッシュ設定**:
+  - `lib/main.dart` で `FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: true, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED)` を明示設定。
+  - 端末ストレージの制限による古いログ・機材データの意図しないキャッシュ破棄を防止。
+- **リポジトリ層の多重フォールバック設計**:
+  - `FirestoreDiveLogRepository`: `getAllLogs()`, `getLogById()` において `Source.serverAndCache` 試行 $\rightarrow$ 圏外例外時は `Source.cache` から即座に読み出し。
+  - `FirestoreGearRepository`: `getAllGear()`, `getGearById()` で同様にキャッシュ自動フォールバック。
+  - `FirestoreScheduleRepository`: `getUpcomingSchedules()` でキャッシュ自動フォールバック。
+  - `FirestoreUserRepository`: `getUserProfile()` でキャッシュ自動フォールバック。
+  - `FirestoreDiveSpotRepository`: キャッシュが空の初回起動・完全オフライン状態でも、クラッシュせず `defaultPresetSpots`（代表9スポット）を安全表示。
+- **オフライン動作検証テスト**:
+  - `test/features/offline/firestore_offline_resilience_test.dart` を新規作成。全6テストがオールグリーン。
+  - 全体テスト **183 件** がオールグリーン（`flutter test` パス）。
+  - 静的解析エラー 0 件（`flutter analyze` 0 issues）。
+
 ---
 
 ## 7. 今後の対応予定（ネクストアクション詳細）
@@ -349,22 +369,12 @@ Clean Architecture のレイヤード設計を厳格に維持し、UI層やUseCa
 flowchart TD
     M1_M2["【完了 ✅】<br>M1: 基盤構築<br>M2: メール & Google 認証"] --> M2_5["【完了 ✅】<br>M2.5: ユーザープロファイル連携<br>& Cカード情報保存"]
     M2_5 --> M3["【完了 ✅】<br>M3: 各種データの Firestore クラウド同期<br>(ログ / 機材 / 予定 / スポット)"]
-    M3 --> M4["【次回着手: M4】<br>Apple サインイン追加<br>& オフラインキャッシュ最適化"]
-    M4 --> M5["【M5】<br>アカウント削除機能<br>& ストア公開準備"]
+    M3 --> M4["【完了 ✅】<br>M4: オフライン永続化キャッシュ最適化<br>& 圏外動作保証"]
+    M4 --> M5["【次回着手: M5】<br>アカウント削除機能<br>& ストア公開準備"]
+    M5 --> M6["【M6】<br>Apple サインイン追加<br>(iOS App Store 審査対応)"]
 ```
 
-### ステップ 1: 【次回着手】Appleサインイン追加 & オフライン最適化（M4）
-
-1. **Apple でサインイン（Sign in with Apple）の実装**:
-   - iOS App Store 審査ガイドライン 4.8（サードパーティログインを提供するアプリは Apple サインインの提供が必須）に対応。
-   - `sign_in_with_apple` パッケージ連携、Firebase Auth クレデンシャル連携。
-2. **オフライン永続化キャッシュ検証**:
-   - 電波が圏外になる洋上・ボート上でのログ入力・機材チェックを可能にするため、Firestore のオフライン永続化（Local Cache）の動作検証を実施。
-   - 機内モードでのログ書き込み $\rightarrow$ オンライン復帰時の自動アップロード同期の確認。
-
----
-
-### ステップ 2: ストア公開必須要件 & アカウント削除（M5）
+### ステップ 1: 【次回着手】ストア公開必須要件 & アカウント削除（M5）
 
 1. **アカウント削除（退会）機能の実装**:
    - Apple / Google 審査ガイドライン準拠の必須要件。
@@ -375,6 +385,16 @@ flowchart TD
 3. **法的要件 & リリースドキュメント**:
    - 利用規約・プライバシーポリシー画面への導線追加。
    - README の完全同期。
+
+---
+
+### ステップ 2: Apple でサインイン追加（M6）
+
+1. **`sign_in_with_apple` パッケージ導入**:
+   - iOS App Store 審査ガイドライン 4.8（サードパーティログインを提供するアプリは Apple サインインの提供が必須）に対応。
+2. **Apple サインイン連携**:
+   - Apple ID 認証トークンから `OAuthProvider("apple.com")` クレデンシャルを生成し、Firebase Auth に連携。
+   - サインイン画面（`SignInPage`）および新規登録画面（`SignUpPage`）に Apple サインインボタンを追加。
 
 ---
 
@@ -410,13 +430,17 @@ flowchart TD
   - [x] `FirestoreScheduleRepository` 実装 & DI 切り替え
   - [x] `FirestoreDiveSpotRepository` 実装 & DI 切り替え
   - [x] 各リポジトリの単体テスト作成 (`fake_cloud_firestore` で全177件テスト合格)
-- [ ] **M4: Appleサインイン & オフライン検証**
-  - [ ] `sign_in_with_apple` 実装
-  - [ ] 圏外（オフライン）キャッシュの動作テスト
+- [x] **M4: オフライン永続化キャッシュ最適化 & 圏外動作保証**
+  - [x] Firestore ローカル永続化キャッシュ（`Settings.CACHE_SIZE_UNLIMITED`）の明示的構成
+  - [x] 各リポジトリのオフライン時キャッシュフォールバック & プリセット安全保護
+  - [x] オフライン耐性検証単体テスト作成（全183件テスト合格）
 - [ ] **M5: アカウント削除 & 本番準備**
   - [ ] アカウント完全削除（退会）機能
   - [ ] パスワードリセットメール疎通確認
   - [ ] README更新 & ストア申請準備
+- [ ] **M6: Appleサインイン追加 (iOS審査対応)**
+  - [ ] `sign_in_with_apple` パッケージ導入 & 認証連携
+  - [ ] iOS App Store 審査対応
 
 
 

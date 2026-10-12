@@ -17,16 +17,30 @@ class FirestoreDiveLogRepository implements DiveLogRepository {
 
   @override
   Future<List<DiveLog>> getAllLogs() async {
-    final querySnapshot = await _logsCollection
-        .orderBy('entryTime', descending: true)
-        .get();
+    QuerySnapshot<Map<String, dynamic>> querySnapshot;
+    try {
+      querySnapshot = await _logsCollection
+          .orderBy('entryTime', descending: true)
+          .get(const GetOptions(source: Source.serverAndCache));
+    } catch (_) {
+      // オフライン・圏外時: ローカルキャッシュから即座に取得
+      querySnapshot = await _logsCollection
+          .orderBy('entryTime', descending: true)
+          .get(const GetOptions(source: Source.cache));
+    }
 
     return querySnapshot.docs.map((doc) => _fromFirestore(doc.data(), doc.id)).toList();
   }
 
   @override
   Future<DiveLog?> getLogById(String id) async {
-    final docSnapshot = await _logsCollection.doc(id).get();
+    DocumentSnapshot<Map<String, dynamic>> docSnapshot;
+    try {
+      docSnapshot = await _logsCollection.doc(id).get(const GetOptions(source: Source.serverAndCache));
+    } catch (_) {
+      // オフライン・圏外時: ローカルキャッシュから取得
+      docSnapshot = await _logsCollection.doc(id).get(const GetOptions(source: Source.cache));
+    }
     if (!docSnapshot.exists || docSnapshot.data() == null) {
       return null;
     }

@@ -17,16 +17,30 @@ class FirestoreGearRepository implements GearRepository {
 
   @override
   Future<List<GearItem>> getAllGear() async {
-    final querySnapshot = await _gearCollection
-        .orderBy('purchaseDate', descending: true)
-        .get();
+    QuerySnapshot<Map<String, dynamic>> querySnapshot;
+    try {
+      querySnapshot = await _gearCollection
+          .orderBy('purchaseDate', descending: true)
+          .get(const GetOptions(source: Source.serverAndCache));
+    } catch (_) {
+      // オフライン・圏外時: ローカルキャッシュから取得
+      querySnapshot = await _gearCollection
+          .orderBy('purchaseDate', descending: true)
+          .get(const GetOptions(source: Source.cache));
+    }
 
     return querySnapshot.docs.map((doc) => _fromFirestore(doc.data(), doc.id)).toList();
   }
 
   @override
   Future<GearItem?> getGearById(String id) async {
-    final docSnapshot = await _gearCollection.doc(id).get();
+    DocumentSnapshot<Map<String, dynamic>> docSnapshot;
+    try {
+      docSnapshot = await _gearCollection.doc(id).get(const GetOptions(source: Source.serverAndCache));
+    } catch (_) {
+      // オフライン・圏外時: ローカルキャッシュから取得
+      docSnapshot = await _gearCollection.doc(id).get(const GetOptions(source: Source.cache));
+    }
     if (!docSnapshot.exists || docSnapshot.data() == null) {
       return null;
     }

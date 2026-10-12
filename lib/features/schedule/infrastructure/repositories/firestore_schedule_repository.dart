@@ -17,9 +17,17 @@ class FirestoreScheduleRepository implements DiveScheduleRepository {
 
   @override
   Future<List<DiveSchedule>> getUpcomingSchedules() async {
-    final querySnapshot = await _schedulesCollection
-        .orderBy('eventDate', descending: false)
-        .get();
+    QuerySnapshot<Map<String, dynamic>> querySnapshot;
+    try {
+      querySnapshot = await _schedulesCollection
+          .orderBy('eventDate', descending: false)
+          .get(const GetOptions(source: Source.serverAndCache));
+    } catch (_) {
+      // オフライン・圏外時: ローカルキャッシュから取得
+      querySnapshot = await _schedulesCollection
+          .orderBy('eventDate', descending: false)
+          .get(const GetOptions(source: Source.cache));
+    }
 
     return querySnapshot.docs.map((doc) => _fromFirestore(doc.data(), doc.id)).toList();
   }

@@ -24,7 +24,13 @@ class FirestoreUserRepository implements UserRepository {
 
   @override
   Future<UserAccount?> getUserProfile(String userId) async {
-    final doc = await _usersCollection.doc(userId).get();
+    DocumentSnapshot<Map<String, dynamic>> doc;
+    try {
+      doc = await _usersCollection.doc(userId).get(const GetOptions(source: Source.serverAndCache));
+    } catch (_) {
+      // オフライン・圏外時: ローカルキャッシュから取得
+      doc = await _usersCollection.doc(userId).get(const GetOptions(source: Source.cache));
+    }
     if (!doc.exists || doc.data() == null) {
       return null;
     }

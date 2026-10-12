@@ -105,45 +105,92 @@ class FirestoreDiveSpotRepository implements DiveSpotRepository {
 
   @override
   Future<List<DiveSpot>> getSpots() async {
-    // 共通マスタとお気に入りを並行取得
-    final spotsFuture = _spotsCollection.get();
-    final favFuture = _favoriteCollection.get();
+    try {
+      // 共通マスタとお気に入りを並行取得
+      final spotsFuture = _spotsCollection.get(const GetOptions(source: Source.serverAndCache));
+      final favFuture = _favoriteCollection.get(const GetOptions(source: Source.serverAndCache));
 
-    final results = await Future.wait([spotsFuture, favFuture]);
-    final spotsSnapshot = results[0];
-    final favSnapshot = results[1];
+      final results = await Future.wait([spotsFuture, favFuture]);
+      final spotsSnapshot = results[0];
+      final favSnapshot = results[1];
 
-    final favoriteIds = favSnapshot.docs.map((d) => d.id).toSet();
+      final favoriteIds = favSnapshot.docs.map((d) => d.id).toSet();
 
-    // 共通マスタが空の場合はプリセットスポットを投入
-    if (spotsSnapshot.docs.isEmpty) {
-      await _seedPresetSpots();
-      return defaultPresetSpots.map((spot) {
-        return spot.copyWith(isFavorite: favoriteIds.contains(spot.id) || spot.isFavorite);
+      // 共通マスタが空の場合はプリセットスポットを投入
+      if (spotsSnapshot.docs.isEmpty) {
+        try {
+          await _seedPresetSpots();
+        } catch (_) {}
+        return defaultPresetSpots.map((spot) {
+          return spot.copyWith(isFavorite: favoriteIds.contains(spot.id) || spot.isFavorite);
+        }).toList();
+      }
+
+      return spotsSnapshot.docs.map((doc) {
+        final isFav = favoriteIds.contains(doc.id);
+        return _fromFirestore(doc.data(), doc.id, isFavorite: isFav);
       }).toList();
-    }
+    } catch (_) {
+      // オフライン・圏外時: ローカルキャッシュからの取得を試行
+      try {
+        final cacheSpots = await _spotsCollection.get(const GetOptions(source: Source.cache));
+        if (cacheSpots.docs.isNotEmpty) {
+          Set<String> favIds = {};
+          try {
+            final cacheFav = await _favoriteCollection.get(const GetOptions(source: Source.cache));
+            favIds = cacheFav.docs.map((d) => d.id).toSet();
+          } catch (_) {}
 
-    return spotsSnapshot.docs.map((doc) {
-      final isFav = favoriteIds.contains(doc.id);
-      return _fromFirestore(doc.data(), doc.id, isFavorite: isFav);
-    }).toList();
+          return cacheSpots.docs.map((doc) {
+            final isFav = favIds.contains(doc.id);
+            return _fromFirestore(doc.data(), doc.id, isFavorite: isFav);
+          }).toList();
+        }
+      } catch (_) {}
+
+      // キャッシュ未初期化のオフライン環境でもクラッシュせず代表スポットを安全表示
+      return defaultPresetSpots;
+    }
   }
 
   @override
   Future<DiveSpot?> getSpotById(String id) async {
-    final docSnapshot = await _spotsCollection.doc(id).get();
-    if (!docSnapshot.exists || docSnapshot.data() == null) {
+    DocumentSnapshot<Map<String, dynamic>>? docSnapshot;
+    try {
+      docSnapshot = await _spotsCollection.doc(id).get(const GetOptions(source: Source.serverAndCache));
+    } catch (_) {
+      try {
+        docSnapshot = await _spotsCollection.doc(id).get(const GetOptions(source: Source.cache));
+      } catch (_) {}
+    }
+
+    if (docSnapshot == null || !docSnapshot.exists || docSnapshot.data() == null) {
       // プリセット内を検索
       try {
         final preset = defaultPresetSpots.firstWhere((s) => s.id == id);
-        final favDoc = await _favoriteCollection.doc(id).get();
-        return preset.copyWith(isFavorite: favDoc.exists);
+        bool isFav = preset.isFavorite;
+        try {
+          final favDoc = await _favoriteCollection.doc(id).get(const GetOptions(source: Source.cache));
+          isFav = favDoc.exists;
+        } catch (_) {}
+        return preset.copyWith(isFavorite: isFav);
       } catch (_) {
         return null;
       }
     }
-    final favDoc = await _favoriteCollection.doc(id).get();
-    return _fromFirestore(docSnapshot.data()!, docSnapshot.id, isFavorite: favDoc.exists);
+
+    bool isFavorite = false;
+    try {
+      final favDoc = await _favoriteCollection.doc(id).get(const GetOptions(source: Source.serverAndCache));
+      isFavorite = favDoc.exists;
+    } catch (_) {
+      try {
+        final favDoc = await _favoriteCollection.doc(id).get(const GetOptions(source: Source.cache));
+        isFavorite = favDoc.exists;
+      } catch (_) {}
+    }
+
+    return _fromFirestore(docSnapshot.data()!, docSnapshot.id, isFavorite: isFavorite);
   }
 
   @override
