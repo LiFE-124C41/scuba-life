@@ -11,8 +11,9 @@ class GetDiveLogs implements UseCase<List<DiveLog>, NoParams> {
   @override
   Future<List<DiveLog>> call(NoParams params) async {
     final logs = await _repository.getAllLogs();
-    // 日時降順でソートして返却
-    logs.sort((a, b) => b.entryTime.compareTo(a.entryTime));
-    return logs;
+    // 日時降順でソートして返却（変更不能リストへの配慮）
+    final sorted = List<DiveLog>.from(logs);
+    sorted.sort((a, b) => b.entryTime.compareTo(a.entryTime));
+    return sorted;
   }
 }

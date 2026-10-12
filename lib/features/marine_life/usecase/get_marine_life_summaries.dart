@@ -45,7 +45,10 @@ class GetMarineLifeSummaries
   @override
   Future<List<MarineLifeSummary>> call(MarineLifeFilterParams params) async {
     final logs = await _repository.getAllLogs();
-    var summaries = MarineLifeSummary.fromLogsList(logs);
+    if (logs.isEmpty) return [];
+
+    var summaries = List<MarineLifeSummary>.from(MarineLifeSummary.fromLogsList(logs));
+    if (summaries.isEmpty) return [];
 
     // 1. 月フィルター適用
     if (params.month != null) {

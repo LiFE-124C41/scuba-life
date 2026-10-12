@@ -50,7 +50,7 @@ class MarineLifeSummary {
   /// - 遭遇回数が多い順（同数の場合は名前の五十音順）にソートして返却
   /// - 各生物内のログは最新順にソート
   static List<MarineLifeSummary> fromLogsList(List<DiveLog> logs) {
-    if (logs.isEmpty) return const [];
+    if (logs.isEmpty) return [];
 
     // 生物名（正規化後） -> 遭遇したログ一覧のマップ
     final Map<String, List<DiveLog>> speciesLogsMap = {};
