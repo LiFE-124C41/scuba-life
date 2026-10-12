@@ -80,13 +80,44 @@ void main() {
       container.dispose();
     });
 
-    test('初期化時: 初期データがロードされてAsyncData状態となること', () async {
+    test('初期化時: リポジトリが空の場合は空リストとしてロードされてAsyncData状態となること', () async {
       // Arrange & Act
       final asyncLogs = await container.read(diveLogListProvider.future);
 
-      // Assert
-      expect(asyncLogs, isNotEmpty);
+      // Assert: 空リストで正しく取得されること（自動でモックデータが投入されないこと）
+      expect(asyncLogs, isEmpty);
       expect(container.read(diveLogListProvider).hasValue, isTrue);
+    });
+
+    test('初期化時: 既存データがある場合はそのデータが正しくロードされること', () async {
+      // Arrange: リポジトリに事前にログを登録
+      final existingLog = DiveLog(
+        id: 'existing-log-1',
+        entryTime: DateTime(2026, 9, 20, 10, 0),
+        exitTime: DateTime(2026, 9, 20, 10, 45),
+        location: '石垣島・川平石崎',
+        maxDepthMeter: 18.0,
+        avgDepthMeter: 11.5,
+        startPressureBar: 200,
+        endPressureBar: 60,
+      );
+      await mockRepo.saveLog(existingLog);
+
+      // 新しいProviderContainerでロード
+      final newContainer = ProviderContainer(
+        overrides: [
+          diveLogRepositoryProvider.overrideWithValue(mockRepo),
+          gearRepositoryProvider.overrideWithValue(mockGearRepo),
+        ],
+      );
+      addTearDown(newContainer.dispose);
+
+      // Act
+      final loaded = await newContainer.read(diveLogListProvider.future);
+
+      // Assert
+      expect(loaded.length, equals(1));
+      expect(loaded.first.id, equals('existing-log-1'));
     });
 
     test('【addLog】新しいログを追加すると、状態が更新されて最新ログが一覧に含まれること', () async {
