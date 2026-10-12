@@ -127,6 +127,9 @@ class _PasswordResetPageState extends ConsumerState<PasswordResetPage> {
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.done,
+                            autofillHints: const [
+                              AutofillHints.email,
+                            ],
                             enabled: !isLoading,
                             onFieldSubmitted: (_) => _handleSendReset(),
                             decoration: const InputDecoration(

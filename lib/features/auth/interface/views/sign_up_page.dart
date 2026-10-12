@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/auth_controller.dart';
 
@@ -38,6 +39,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     );
 
     if (user != null && mounted) {
+      // パスワードマネージャーに資格情報の保存を促す
+      TextInput.finishAutofillContext();
       // 登録成功時は画面を閉じてメイン側へ遷移
       Navigator.of(context).pop();
     } else if (mounted) {
@@ -69,172 +72,187 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'ダイバーアカウントを作成',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'ログブックや機材データをクラウドに保存・同期します',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // ユーザー表示名
-                    TextFormField(
-                      controller: _nameController,
-                      textInputAction: TextInputAction.next,
-                      enabled: !isLoading,
-                      decoration: const InputDecoration(
-                        labelText: 'ダイバー名 / 表示名 (任意)',
-                        hintText: '例: 海野 太郎',
-                        prefixIcon: Icon(Icons.person_outline),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // メールアドレス
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      enabled: !isLoading,
-                      decoration: const InputDecoration(
-                        labelText: 'メールアドレス *',
-                        hintText: 'example@scuba.com',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'メールアドレスを入力してください';
-                        }
-                        if (!value.contains('@')) {
-                          return '有効なメールアドレスを入力してください';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // パスワード
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.next,
-                      enabled: !isLoading,
-                      decoration: InputDecoration(
-                        labelText: 'パスワード (6文字以上) *',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
+              child: AutofillGroup(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'ダイバーアカウントを作成',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'パスワードを入力してください';
-                        }
-                        if (value.length < 6) {
-                          return 'パスワードは6文字以上で入力してください';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // パスワード確認
-                    TextFormField(
-                      controller: _confirmPasswordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      enabled: !isLoading,
-                      onFieldSubmitted: (_) => _handleSignUp(),
-                      decoration: const InputDecoration(
-                        labelText: 'パスワードの確認 *',
-                        prefixIcon: Icon(Icons.lock_clock_outlined),
-                        border: OutlineInputBorder(),
+                      const SizedBox(height: 8),
+                      Text(
+                        'ログブックや機材データをクラウドに保存・同期します',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return '確認のため再度パスワードを入力してください';
-                        }
-                        if (value != _passwordController.text) {
-                          return 'パスワードが一致しません';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 28),
+                      const SizedBox(height: 24),
 
-                    // 新規登録ボタン
-                    FilledButton(
-                      onPressed: isLoading ? null : _handleSignUp,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      // ユーザー表示名
+                      TextFormField(
+                        controller: _nameController,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [
+                          AutofillHints.name,
+                        ],
+                        enabled: !isLoading,
+                        decoration: const InputDecoration(
+                          labelText: 'ダイバー名 / 表示名 (任意)',
+                          hintText: '例: 海野 太郎',
+                          prefixIcon: Icon(Icons.person_outline),
+                          border: OutlineInputBorder(),
+                        ),
                       ),
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text(
-                              'アカウントを作成する',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      const SizedBox(height: 16),
+
+                      // メールアドレス
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [
+                          AutofillHints.email,
+                          AutofillHints.newUsername,
+                        ],
+                        enabled: !isLoading,
+                        decoration: const InputDecoration(
+                          labelText: 'メールアドレス *',
+                          hintText: 'example@scuba.com',
+                          prefixIcon: Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'メールアドレスを入力してください';
+                          }
+                          if (!value.contains('@')) {
+                            return '有効なメールアドレスを入力してください';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // パスワード
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [
+                          AutofillHints.newPassword,
+                        ],
+                        enabled: !isLoading,
+                        decoration: InputDecoration(
+                          labelText: 'パスワード (6文字以上) *',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                             ),
-                    ),
-                    const SizedBox(height: 20),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'パスワードを入力してください';
+                          }
+                          if (value.length < 6) {
+                            return 'パスワードは6文字以上で入力してください';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
 
-                    // ログインへの戻りリンク
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 4,
-                      children: [
-                        Text(
-                          '既にアカウントをお持ちですか？',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                      // パスワード確認
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [
+                          AutofillHints.newPassword,
+                        ],
+                        enabled: !isLoading,
+                        onFieldSubmitted: (_) => _handleSignUp(),
+                        decoration: const InputDecoration(
+                          labelText: 'パスワードの確認 *',
+                          prefixIcon: Icon(Icons.lock_clock_outlined),
+                          border: OutlineInputBorder(),
                         ),
-                        TextButton(
-                          onPressed: isLoading ? null : () => Navigator.of(context).pop(),
-                          child: const Text(
-                            'ログイン',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '確認のため再度パスワードを入力してください';
+                          }
+                          if (value != _passwordController.text) {
+                            return 'パスワードが一致しません';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 28),
+
+                      // 新規登録ボタン
+                      FilledButton(
+                        onPressed: isLoading ? null : _handleSignUp,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                      ],
-                    ),
-                  ],
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'アカウントを作成する',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ログインへの戻りリンク
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 4,
+                        children: [
+                          Text(
+                            '既にアカウントをお持ちですか？',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                            child: const Text(
+                              'ログイン',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

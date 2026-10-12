@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/auth_controller.dart';
 import 'password_reset_page.dart';
@@ -34,7 +35,10 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       password: _passwordController.text,
     );
 
-    if (user == null && mounted) {
+    if (user != null) {
+      // パスワードマネージャーに資格情報の保存プロンプトを通知
+      TextInput.finishAutofillContext();
+    } else if (mounted) {
       final state = ref.read(authActionControllerProvider);
       final errorMsg = state.error?.toString() ?? 'サインインに失敗しました。';
       ScaffoldMessenger.of(context).showSnackBar(
@@ -76,106 +80,114 @@ class _SignInPageState extends ConsumerState<SignInPage> {
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 16),
-                    // アプリアイコン・ロゴヘッダー
-                    Center(
-                      child: Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.scuba_diving,
-                          size: 40,
-                          color: colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Scuba Life',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'ダイビングログと機材データをクラウドで安全に管理',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // メールアドレス入力
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      enabled: !isLoading,
-                      decoration: const InputDecoration(
-                        labelText: 'メールアドレス',
-                        hintText: 'example@scuba.com',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'メールアドレスを入力してください';
-                        }
-                        if (!value.contains('@')) {
-                          return '有効なメールアドレスを入力してください';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // パスワード入力
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      enabled: !isLoading,
-                      onFieldSubmitted: (_) => _handleSignIn(),
-                      decoration: InputDecoration(
-                        labelText: 'パスワード',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+              child: AutofillGroup(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 16),
+                      // アプリアイコン・ロゴヘッダー
+                      Center(
+                        child: Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            shape: BoxShape.circle,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
+                          child: Icon(
+                            Icons.scuba_diving,
+                            size: 40,
+                            color: colorScheme.onPrimaryContainer,
+                          ),
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'パスワードを入力してください';
-                        }
-                        if (value.length < 6) {
-                          return 'パスワードは6文字以上で入力してください';
-                        }
-                        return null;
-                      },
-                    ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Scuba Life',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'ダイビングログと機材データをクラウドで安全に管理',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // メールアドレス入力
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [
+                          AutofillHints.email,
+                          AutofillHints.username,
+                        ],
+                        enabled: !isLoading,
+                        decoration: const InputDecoration(
+                          labelText: 'メールアドレス',
+                          hintText: 'example@scuba.com',
+                          prefixIcon: Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'メールアドレスを入力してください';
+                          }
+                          if (!value.contains('@')) {
+                            return '有効なメールアドレスを入力してください';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // パスワード入力
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [
+                          AutofillHints.password,
+                        ],
+                        enabled: !isLoading,
+                        onFieldSubmitted: (_) => _handleSignIn(),
+                        decoration: InputDecoration(
+                          labelText: 'パスワード',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'パスワードを入力してください';
+                          }
+                          if (value.length < 6) {
+                            return 'パスワードは6文字以上で入力してください';
+                          }
+                          return null;
+                        },
+                      ),
 
                     // パスワードリセットリンク
                     Align(
@@ -288,6 +300,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
