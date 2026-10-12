@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.scubalife" "\0"
+            VALUE "CompanyName", "com.life_124c41" "\0"
             VALUE "FileDescription", "scuba_life" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "scuba_life" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.scubalife. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.life_124c41. All rights reserved." "\0"
             VALUE "OriginalFilename", "scuba_life.exe" "\0"
             VALUE "ProductName", "scuba_life" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
