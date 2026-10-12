@@ -55,6 +55,24 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     }
   }
 
+  Future<void> _handleGoogleSignUp() async {
+    final controller = ref.read(authActionControllerProvider.notifier);
+    final user = await controller.signInWithGoogle();
+
+    if (user != null && mounted) {
+      Navigator.of(context).pop();
+    } else if (mounted) {
+      final state = ref.read(authActionControllerProvider);
+      final errorMsg = state.error?.toString() ?? 'Googleでの登録に失敗しました。';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -227,6 +245,38 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 区切り線
+                      Row(
+                        children: [
+                          const Expanded(child: Divider()),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'または',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.outline,
+                              ),
+                            ),
+                          ),
+                          const Expanded(child: Divider()),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Google SSO 登録ボタン
+                      OutlinedButton.icon(
+                        onPressed: isLoading ? null : _handleGoogleSignUp,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        icon: const Icon(Icons.g_mobiledata, size: 28),
+                        label: const Text(
+                          'Google で登録',
+                          style: TextStyle(fontSize: 15),
+                        ),
                       ),
                       const SizedBox(height: 20),
 

@@ -103,6 +103,33 @@ void main() {
       expect(fakeAuthRepo.currentUser?.email, equals('newdiver@example.com'));
     });
 
+    testWidgets('SignUpPage: Google で登録ボタンからGoogle SSO会員登録ができること',
+        (WidgetTester tester) async {
+      // Arrange
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          ],
+          child: const MaterialApp(
+            home: SignUpPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Assert: ボタンが存在すること
+      expect(find.text('Google で登録'), findsOneWidget);
+
+      // Act: Google で登録ボタンを押下
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Google で登録'));
+      await tester.pumpAndSettle();
+
+      // Assert: Googleユーザーとしてログイン・登録されていること
+      expect(fakeAuthRepo.currentUser?.email, equals('diver.google@example.com'));
+      expect(fakeAuthRepo.currentUser?.displayName, equals('Google Diver'));
+    });
+
     testWidgets('PasswordResetPage: パスワード再設定画面の描画と送信確認', (WidgetTester tester) async {
       // Arrange
       await tester.pumpWidget(
