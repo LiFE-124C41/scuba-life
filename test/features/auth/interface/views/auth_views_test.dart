@@ -272,5 +272,56 @@ void main() {
       loggedInRepo.dispose();
       fakeUserRepo.dispose();
     });
+
+    testWidgets('ProfilePage: アカウント完全削除（退会）ボタン押下で確認ダイアログが表示され、キャンセルできること',
+        (WidgetTester tester) async {
+      // Arrange
+      const initialUser = UserAccount(
+        id: 'user-delete-test',
+        email: 'delete.test@example.com',
+        displayName: '退会テストダイバー',
+      );
+      final loggedInRepo = InMemoryAuthRepository(initialUser: initialUser);
+      final fakeUserRepo = InMemoryUserRepository(initialUsers: {
+        initialUser.id: initialUser,
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(loggedInRepo),
+            userRepositoryProvider.overrideWithValue(fakeUserRepo),
+          ],
+          child: const MaterialApp(
+            home: ProfilePage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Assert: アカウント完全削除（退会）ボタンが存在すること
+      final deleteButton = find.text('アカウントを完全に削除（退会）');
+      expect(deleteButton, findsOneWidget);
+
+      // Act: アカウント削除ボタンをタップ
+      await tester.ensureVisible(deleteButton);
+      await tester.tap(deleteButton);
+      await tester.pumpAndSettle();
+
+      // Assert: 確認ダイアログが表示されること
+      expect(find.text('退会・アカウント削除の確認'), findsOneWidget);
+      expect(find.text('アカウントを削除する'), findsOneWidget);
+
+      // Act: ダイアログのキャンセルボタンをタップ
+      await tester.tap(find.text('キャンセル'));
+      await tester.pumpAndSettle();
+
+      // Assert: ダイアログが閉じ、まだログイン状態であること
+      expect(find.text('退会・アカウント削除の確認'), findsNothing);
+      expect(loggedInRepo.currentUser, isNotNull);
+
+      loggedInRepo.dispose();
+      fakeUserRepo.dispose();
+    });
   });
 }

@@ -16,4 +16,7 @@ abstract class UserRepository {
 
   /// サインアップ・サインイン時の初期プロファイル同期（ドキュメントが存在しない場合のみ作成し、最新を返す）
   Future<UserAccount> syncInitialProfile(UserAccount user);
+
+  /// ユーザーに関連する全Firestoreデータ（サブコレクション及びプロファイル）を削除
+  Future<void> deleteUserData(String userId);
 }

@@ -3,12 +3,14 @@ import '../../../../core/usecase/usecase.dart';
 import '../../domain/entities/user_account.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../infrastructure/repositories/firebase_auth_repository.dart';
+import '../../usecase/delete_account.dart';
 import '../../usecase/send_password_reset.dart';
 import '../../usecase/sign_in_with_email.dart';
 import '../../usecase/sign_in_with_google.dart';
 import '../../usecase/sign_out.dart';
 import '../../usecase/sign_up_with_email.dart';
 import '../../usecase/watch_auth_state.dart';
+import 'user_profile_controller.dart';
 
 // --- DI Providers ---
 
@@ -46,6 +48,15 @@ final signOutUseCaseProvider = Provider<SignOut>((ref) {
 final sendPasswordResetUseCaseProvider = Provider<SendPasswordReset>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return SendPasswordReset(repository);
+});
+
+final deleteAccountUseCaseProvider = Provider<DeleteAccount>((ref) {
+  final authRepo = ref.watch(authRepositoryProvider);
+  final userRepo = ref.watch(userRepositoryProvider);
+  return DeleteAccount(
+    authRepository: authRepo,
+    userRepository: userRepo,
+  );
 });
 
 // --- Auth State Stream Provider ---
@@ -139,6 +150,20 @@ class AuthActionNotifier extends AsyncNotifier<void> {
     try {
       final usecase = ref.read(sendPasswordResetUseCaseProvider);
       await usecase(email);
+      state = const AsyncValue.data(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      return false;
+    }
+  }
+
+  /// アカウント完全削除（退会）
+  Future<bool> deleteAccount() async {
+    state = const AsyncValue.loading();
+    try {
+      final usecase = ref.read(deleteAccountUseCaseProvider);
+      await usecase(const NoParams());
       state = const AsyncValue.data(null);
       return true;
     } catch (e, st) {

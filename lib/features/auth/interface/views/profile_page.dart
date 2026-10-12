@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/user_account.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/user_profile_controller.dart';
@@ -33,6 +34,55 @@ class ProfilePage extends ConsumerWidget {
       await controller.signOut();
       if (context.mounted) {
         Navigator.of(context).pop();
+      }
+    }
+  }
+
+  Future<void> _showDeleteAccountDialog(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('退会・アカウント削除の確認'),
+        content: const Text(
+          'アカウントを削除すると、記録したすべてのダイブログ、マイ機材、トリップ予定データがサーバーから完全に削除され、復元することはできません。\n\n本当に退会しますか？',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('アカウントを削除する'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final controller = ref.read(authActionControllerProvider.notifier);
+      final success = await controller.deleteAccount();
+
+      if (!context.mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('アカウントを完全に削除しました。')),
+        );
+        Navigator.of(context).pop();
+      } else {
+        final error = ref.read(authActionControllerProvider).error;
+        final message = error is Failure ? error.message : 'アカウントの削除に失敗しました。';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     }
   }
@@ -333,6 +383,24 @@ class ProfilePage extends ConsumerWidget {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
+                      const SizedBox(height: 16),
+
+                      // 5. アカウント完全削除（退会）導線
+                      TextButton.icon(
+                        onPressed: isLoading ? null : () => _showDeleteAccountDialog(context, ref),
+                        style: TextButton.styleFrom(
+                          foregroundColor: colorScheme.error,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        icon: const Icon(Icons.delete_forever, size: 20),
+                        label: const Text(
+                          'アカウントを完全に削除（退会）',
+                          style: TextStyle(
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),

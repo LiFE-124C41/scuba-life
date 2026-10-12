@@ -118,6 +118,18 @@ class FirebaseAuthRepository implements AuthRepository {
     }
   }
 
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      await _dataSource.deleteCurrentUser();
+    } on FirebaseAuthException catch (e) {
+      throw _handleFirebaseAuthException(e);
+    } catch (e) {
+      if (e is AuthFailure) rethrow;
+      throw UnknownAuthFailure(e.toString());
+    }
+  }
+
   /// Firebase の User をドメインの UserAccount にマッピング
   UserAccount? _toDomainUser(User? user) {
     if (user == null) return null;
@@ -152,6 +164,8 @@ class FirebaseAuthRepository implements AuthRepository {
         return const TooManyRequestsFailure();
       case 'network-request-failed':
         return const NetworkAuthFailure();
+      case 'requires-recent-login':
+        return const RequiresRecentLoginFailure();
       default:
         return UnknownAuthFailure(e.message ?? '認証エラーが発生しました (${e.code})。');
     }

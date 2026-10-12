@@ -69,4 +69,14 @@ class FirebaseAuthDataSource {
   Future<void> reloadUser() async {
     await _firebaseAuth.currentUser?.reload();
   }
+
+  Future<void> deleteCurrentUser() async {
+    final user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await user.delete();
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+    }
+  }
 }

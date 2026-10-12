@@ -110,6 +110,16 @@ class InMemoryAuthRepository implements AuthRepository {
     _authStateController.add(_currentUser);
   }
 
+  @override
+  Future<void> deleteAccount() async {
+    if (_currentUser != null) {
+      _usersByEmail.remove(_currentUser!.email);
+      _userPasswords.remove(_currentUser!.email);
+      _currentUser = null;
+      _authStateController.add(null);
+    }
+  }
+
   void dispose() {
     _authStateController.close();
   }

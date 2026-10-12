@@ -61,9 +61,17 @@ class NetworkAuthFailure extends AuthFailure {
   ]);
 }
 
+/// 再認証（再ログイン）が必要な場合のエラー（退会・PW変更等の重要操作時）
+class RequiresRecentLoginFailure extends AuthFailure {
+  const RequiresRecentLoginFailure([
+    super.message = 'セキュリティ保護のため再ログインが必要です。一度ログアウトし、再ログイン後にもう一度お試しください。',
+  ]);
+}
+
 /// 原因不明・未分類の認証エラー
 class UnknownAuthFailure extends AuthFailure {
   const UnknownAuthFailure([
     super.message = '認証処理中に予期せぬエラーが発生しました。',
   ]);
 }
+

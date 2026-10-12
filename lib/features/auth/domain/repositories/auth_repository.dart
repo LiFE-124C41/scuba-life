@@ -35,4 +35,7 @@ abstract class AuthRepository {
 
   /// ユーザー情報を最新状態にリロードする
   Future<void> reloadUser();
+
+  /// 現在ログイン中のアカウントを完全に削除（退会）する
+  Future<void> deleteAccount();
 }

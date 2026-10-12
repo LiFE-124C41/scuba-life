@@ -116,9 +116,10 @@
 - **認証状態に応じた画面ルーティング**:
   - 未ログイン時はサインイン画面（`SignInPage`）を表示し、ログイン完了で自動的にメインナビゲーション画面へ遷移。
   - ログブック画面右上からアカウント設定（`ProfilePage`）にアクセス可能。
-- **プロフィール & ログアウト管理（`ProfilePage`）**:
+- **プロフィール、ログアウト & 退会（アカウント完全削除）機能（`ProfilePage`）**:
   - ログイン中ダイバーのアバター、表示名、メールアドレス、UID、同期状態バッジを表示。
   - 確認ダイアログ付きの安全なログアウト機能。
+  - **アカウント完全削除（退会機能）**: アプリストア（App Store / Google Play）審査ガイドラインに準拠し、ユーザー自身でアカウントと関連データを完全に削除可能。誤操作防止の警告ダイアログを経て、Firestore 上のサブコレクション（ログブック、機材、予定、お気に入りスポット）およびユーザードキュメントを一括物理削除した上で、Firebase Authentication アカウントを完全に抹消します。
 
 ### 7. クラウドデータ同期・永続化（Cloud Firestore）
 - **ユーザー専用サブコレクション構造**:
@@ -262,7 +263,8 @@ lib/
 │       │   ├── get_user_profile.dart
 │       │   ├── watch_user_profile.dart
 │       │   ├── update_user_profile.dart
-│       │   └── sync_initial_profile.dart
+│       │   ├── sync_initial_profile.dart
+│       │   └── delete_account.dart         # 退会・アカウント完全削除
 │       ├── interface/                      # UI・状態管理 (Riverpod)
 │       │   ├── controllers/auth_controller.dart
 │       │   ├── controllers/user_profile_controller.dart

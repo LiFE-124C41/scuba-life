@@ -50,6 +50,12 @@ class InMemoryUserRepository implements UserRepository {
     return user;
   }
 
+  @override
+  Future<void> deleteUserData(String userId) async {
+    _users.remove(userId);
+    _controllers[userId]?.add(null);
+  }
+
   void dispose() {
     for (final controller in _controllers.values) {
       controller.close();

@@ -225,11 +225,11 @@ gantt
     section M4: オフライン最適化
     Firestore永続化キャッシュ & 圏外動作保証    :m4_1, after m3_2, 4d
     ネットワーク検知 & 同期ステータス表示      :m4_2, after m4_1, 3d
-    section M5: 本番準備
+    section M5: 退会・アカウント削除
     退会・アカウント削除 (ストア必須要件)       :m5_1, after m4_2, 3d
-    README更新 & リリース確認                 :m5_2, after m5_1, 3d
-    section M6: Apple サインイン
-    Appleでサインイン追加実装 (iOS審査対応)    :m6_1, after m5_2, 4d
+    section M6: Appleサインイン & リリース準備
+    Appleでサインイン追加実装 (iOS審査対応)    :m6_1, after m5_1, 4d
+    README更新 & リリース確認                 :m6_2, after m6_1, 3d
 ```
 
 ### マイルストーン詳細一覧 & 進捗状況
@@ -241,8 +241,8 @@ gantt
 | **M2.5: ユーザープロファイル連携 & Cカード情報保存** | **【完了 ✅】** | - Firestore `users/{userId}` 初期ドキュメントの自動生成 (upsert)<br>- Cカード情報（指導団体: PADI等、ランク: OW/AOW等、カード番号、経験本数オフセット）の編集・保存<br>- プロフィール画面（`ProfilePage`）拡張および編集ダイアログ実装<br>- UseCase・UI・小型画面（360px）レスポンシブテスト作成（全162件パス） | プロフィール編集内容が Firestore に永続化され、アプリ再起動後も正しく復元されること。 |
 | **M3: 各種データのクラウド永続化（Firestore同期）** | **【完了 ✅】** | - `FirestoreDiveLogRepository` (`/users/{userId}/dive_logs`)<br>- `FirestoreGearRepository` (`/users/{userId}/gear_items`)<br>- `FirestoreScheduleRepository` (`/users/{userId}/dive_schedules`)<br>- `FirestoreDiveSpotRepository` (`/dive_spots`, `favorite_spots`)<br>- リポジトリProviderのFirestore版動的切り替え<br>- `fake_cloud_firestore` によるリポジトリ単体テスト（全177件パス） | ログ登録や機材変更を行うと即座にFirestoreに反映され、別端末・再起動後もデータが完全に復元されること。 |
 | **M4: オフライン永続化キャッシュ最適化 & 圏外動作保証** | **【完了 ✅】** | - Firestore のローカル永続化キャッシュ（Offline Persistence）明示的設定<br>- 圏外・洋上ボート上でのログブック・機材・予定の閲覧 & オフライン追記対応<br>- キャッシュ未初期化のオフライン環境でも代表スポットを安全表示<br>- オフライン動作検証テストの実装（全183件パス） | 機内モード時でもアプリがクラッシュせず直前のログや機材を閲覧・追記でき、オンライン復帰時に安全に同期されること。 |
-| **M5: アカウント削除・規約対応・本番準備** | **【次回着手】** | - アカウント削除機能（Apple/Googleガイドライン準拠）<br>- パスワード再設定メール送信機能の実機検証<br>- 利用規約・プライバシーポリシー画面<br>- README の機能一覧・設計セクション更新 | アカウント削除を含む全規約対応が完了し、READMEが最新状態に同期され、テストがオールグリーンであること。 |
-| **M6: Appleサインイン追加 (iOS審査対応)** | **【予定】** | - `sign_in_with_apple` パッケージ連携<br>- Apple ID によるサインイン / アカウント作成<br>- iOS App Store 審査ガイドライン 4.8 対応 | iOSでAppleサインインが動作し、新規アカウント作成・ログインが完了すること。 |
+| **M5: 退会・アカウント完全削除機能（ストア必須要件）** | **【完了 ✅】** | - `ProfilePage` に退会・アカウント削除導線（確認ダイアログ付き）の追加<br>- Firestore ユーザー関連データ（サブコレクション & ドキュメント）の一括削除<br>- Firebase Authentication アカウント完全削除（`delete()`）<br>- `requires-recent-login`（再認証要請）の安全なハンドリング<br>- 単体テスト・ウィジェットテスト作成（全186件パス） | アプリ内から退会確認ダイアログを経てアカウントおよび全データが完全削除され、サインイン画面に戻ること。 |
+| **M6: Appleサインイン追加 & リリース本番準備** | **【次フェーズ 🚀】** | - `sign_in_with_apple` パッケージ連携（iOS審査対応）<br>- Apple ID によるサインイン / アカウント作成<br>- パスワード再設定メールの実機検証<br>- 利用規約・プライバシーポリシー画面<br>- README更新 & リリース確認 | iOSでAppleサインインが動作し、リリース前確認・規約対応がすべて完了していること。 |
 
 ---
 
@@ -359,6 +359,28 @@ Clean Architecture のレイヤード設計を厳格に維持し、UI層やUseCa
   - 全体テスト **183 件** がオールグリーン（`flutter test` パス）。
   - 静的解析エラー 0 件（`flutter analyze` 0 issues）。
 
+### 6. 退会・アカウント完全削除機能の実装（M5実績）
+Google Play および Apple App Store の審査ガイドラインで義務付けられている「アプリ内からのアカウント削除・退会」要件に完全準拠：
+
+- **クリーンアーキテクチャ設計**:
+  - `AuthRepository`: `deleteAccount()` メソッド追加。
+  - `UserRepository`: `deleteUserData(String userId)` メソッド追加。
+  - `DeleteAccount` UseCase (`lib/features/auth/usecase/delete_account.dart`): Pure Dart で実装。
+- **データ削除とAuth削除の順序制御（重要設計）**:
+  - 先に Firebase Authentication を削除すると Firestore セキュリティルール（`request.auth.uid == userId`）によりデータ削除が拒否されるため、必ず「**Firestore ユーザーデータ削除 $\rightarrow$ Firebase Auth アカウント削除**」の順序で実行。
+- **Firestore データの完全クリーンアップ**:
+  - `FirestoreUserRepository.deleteUserData()`: `/users/{userId}` 直下の4つのサブコレクション（`dive_logs`, `gear_items`, `dive_schedules`, `favorite_spots`）およびユーザードキュメント本体を `WriteBatch` により一括削除。
+- **例外ハンドリング**:
+  - 長時間ログインによる `requires-recent-login`（再認証要請）を `RequiresRecentLoginFailure` にマッピングし、「セキュリティ保護のため再ログインが必要です」とユーザーに明瞭案内。
+- **UI / UX**:
+  - `ProfilePage` 最下部に赤字テキストボタン「アカウントを完全に削除（退会）」を配置。
+  - 誤タップ防止の確認ダイアログ（「すべてのデータが永久に削除され復元できません」）を表示。
+  - 削除成功時は自動でサインイン画面へリダイレクト。
+- **テスト品質**:
+  - `DeleteAccount` 単体テスト（正常系・未ログイン異常系）および退会確認ダイアログのウィジェットテストを作成。
+  - 全体テスト **186 件** がオールグリーン（`flutter test` パス）。
+  - 静的解析エラー 0 件（`flutter analyze` 0 issues）。
+
 ---
 
 ## 7. 今後の対応予定（ネクストアクション詳細）
@@ -370,31 +392,20 @@ flowchart TD
     M1_M2["【完了 ✅】<br>M1: 基盤構築<br>M2: メール & Google 認証"] --> M2_5["【完了 ✅】<br>M2.5: ユーザープロファイル連携<br>& Cカード情報保存"]
     M2_5 --> M3["【完了 ✅】<br>M3: 各種データの Firestore クラウド同期<br>(ログ / 機材 / 予定 / スポット)"]
     M3 --> M4["【完了 ✅】<br>M4: オフライン永続化キャッシュ最適化<br>& 圏外動作保証"]
-    M4 --> M5["【次回着手: M5】<br>アカウント削除機能<br>& ストア公開準備"]
-    M5 --> M6["【M6】<br>Apple サインイン追加<br>(iOS App Store 審査対応)"]
+    M4 --> M5["【完了 ✅】<br>M5: 退会・アカウント完全削除機能<br>(ストア必須要件)"]
+    M5 --> M6["【次フェーズ: M6 🚀】<br>Apple サインイン追加<br>& リリース本番準備"]
 ```
 
-### ステップ 1: 【次回着手】ストア公開必須要件 & アカウント削除（M5）
+### 次回着手対象: Apple でサインイン追加 & リリース本番準備（M6）
 
-1. **アカウント削除（退会）機能の実装**:
-   - Apple / Google 審査ガイドライン準拠の必須要件。
-   - `ProfilePage` からアカウント削除ダイアログを起動。
-   - Firebase Authentication ユーザー削除 ＋ Firestore 内の `/users/{userId}` および全サブコレクションの一括削除処理を実装。
+1. **`sign_in_with_apple` パッケージ導入 & 認証連携**:
+   - iOS App Store 審査ガイドライン 4.8（サードパーティログインを提供するアプリは Apple サインインの提供が必須）に対応。
+   - Apple ID 認証トークンから `OAuthProvider("apple.com")` クレデンシャルを生成し、Firebase Auth に連携。
 2. **パスワードリセットメールの実機検証**:
    - パスワード再設定画面（`PasswordResetPage`）からのメール送信および再設定リンクの疎通確認。
-3. **法的要件 & リリースドキュメント**:
+3. **法的要件 & リリース確認**:
    - 利用規約・プライバシーポリシー画面への導線追加。
-   - README の完全同期。
-
----
-
-### ステップ 2: Apple でサインイン追加（M6）
-
-1. **`sign_in_with_apple` パッケージ導入**:
-   - iOS App Store 審査ガイドライン 4.8（サードパーティログインを提供するアプリは Apple サインインの提供が必須）に対応。
-2. **Apple サインイン連携**:
-   - Apple ID 認証トークンから `OAuthProvider("apple.com")` クレデンシャルを生成し、Firebase Auth に連携。
-   - サインイン画面（`SignInPage`）および新規登録画面（`SignUpPage`）に Apple サインインボタンを追加。
+   - README の完全同期およびストア申請準備。
 
 ---
 
@@ -434,13 +445,17 @@ flowchart TD
   - [x] Firestore ローカル永続化キャッシュ（`Settings.CACHE_SIZE_UNLIMITED`）の明示的構成
   - [x] 各リポジトリのオフライン時キャッシュフォールバック & プリセット安全保護
   - [x] オフライン耐性検証単体テスト作成（全183件テスト合格）
-- [ ] **M5: アカウント削除 & 本番準備**
-  - [ ] アカウント完全削除（退会）機能
-  - [ ] パスワードリセットメール疎通確認
-  - [ ] README更新 & ストア申請準備
-- [ ] **M6: Appleサインイン追加 (iOS審査対応)**
+- [x] **M5: 退会・アカウント完全削除機能（ストア必須要件）**
+  - [x] `AuthRepository` に `deleteAccount()` IF追加
+  - [x] Firestore ユーザーデータ（`/users/{userId}` 及びサブコレクション）の一括削除実装
+  - [x] `DeleteAccount` UseCase 実装 & 異常系ハンドリング（`requires-recent-login`）
+  - [x] `ProfilePage` に退会導線 & 確認ダイアログ実装
+  - [x] アカウント削除の単体テスト & ウィジェットテスト作成（全186件テスト合格）
+- [ ] **M6: Appleサインイン追加 & リリース本番準備**
   - [ ] `sign_in_with_apple` パッケージ導入 & 認証連携
-  - [ ] iOS App Store 審査対応
+  - [ ] パスワードリセットメール疎通確認
+  - [ ] 利用規約・プライバシーポリシー画面
+  - [ ] README更新 & ストア申請準備
 
 
 

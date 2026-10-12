@@ -80,6 +80,27 @@ class FirestoreUserRepository implements UserRepository {
     }
   }
 
+  @override
+  Future<void> deleteUserData(String userId) async {
+    final userDocRef = _usersCollection.doc(userId);
+    final subcollections = ['dive_logs', 'gear_items', 'dive_schedules', 'favorite_spots'];
+
+    for (final sub in subcollections) {
+      try {
+        final snapshot = await userDocRef.collection(sub).get();
+        final batch = _firestore.batch();
+        for (final doc in snapshot.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      } catch (_) {}
+    }
+
+    try {
+      await userDocRef.delete();
+    } catch (_) {}
+  }
+
   /// Firestore ドキュメントデータから UserAccount エンティティへ変換
   UserAccount _fromFirestore(Map<String, dynamic> data, String id) {
     DateTime? parseDate(dynamic value) {
