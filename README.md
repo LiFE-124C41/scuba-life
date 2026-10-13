@@ -103,7 +103,41 @@
   - 生き物カードのタップにより、ボトムシートで詳細なサマリー（出現月一覧、出会ったポイント一覧、最大遭遇深度）および過去の遭遇ログタイムラインを展開。
   - 各ログの日付、ポイント名、最大水深、潜水時間、水温、透明度、メモを確認でき、「ログを見る」ボタンから対象のダイビングログ詳細（`DiveLogDetailPage`）へ直接ジャンプ可能。
 
+### 6. アカウント・認証・ダイバープロファイル管理（Authentication & Profile）
+- **安全なアカウント管理（Firebase Authentication連携）**:
+  - **メール/パスワード認証**: バリデーション付きのサインイン・新規登録フォーム。
+  - **Googleサインイン連携**: Googleアカウントを利用したワンタップ認証（Google SSO）に対応。
+  - **パスワードマネージャー連携**: Bitwarden や 1Password、Googleパスワードマネージャー等の自動入力（`AutofillGroup` / `autofillHints`）に対応。
+  - **パスワード再設定**: 登録アドレスへのリセットメール送信に対応。送信完了時の安心なガイダンス画面を表示。
+  - **利用規約・プライバシーポリシー対応**: 新規登録画面（`SignUpPage`）で利用規約およびプライバシーポリシーへの同意導線を設置。小型画面（幅360px）でも折り返される堅牢なレスポンシブレイアウトを採用。
+- **ダイバープロファイル & Cカード（ライセンス）管理（Cloud Firestore連携）**:
+  - **Cカード認定情報の保存**: 指導団体（PADI, NAUI, SSI, BSAC, CMAS 等）や認定ランク（OW, AOW, RED, MSD, DM, INST 等）、Cカード認定番号をクラウド（`/users/{userId}`）で一元管理。
+  - **アプリ導入前の経験本数（オフセット）設定**: アプリ開始前の潜水本数を登録可能。今後のログ集計や通算ダイブ本数に自動合算。
+  - **ダイバー情報編集モーダル（`EditDiverProfileDialog`）**: プロフィール画面からいつでもニックネームやCカード情報を更新可能。
+- **認証状態に応じた画面ルーティング**:
+  - 未ログイン時はサインイン画面（`SignInPage`）を表示し、ログイン完了で自動的にメインナビゲーション画面へ遷移。
+  - ログブック画面右上からアカウント設定（`ProfilePage`）にアクセス可能。
+- **プロフィール、ログアウト & 退会（アカウント完全削除）機能（`ProfilePage`）**:
+  - ログイン中ダイバーのアバター、表示名、メールアドレス、UID、同期状態バッジを表示。
+  - アプリ情報・法的情報（利用規約、プライバシーポリシー）のワンタップ閲覧。
+  - 確認ダイアログ付きの安全なログアウト機能。
+  - **アカウント完全削除（退会機能）**: アプリストア（App Store / Google Play）審査ガイドラインに準拠し、ユーザー自身でアカウントと関連データを完全に削除可能。誤操作防止の警告ダイアログを経て、Firestore 上のサブコレクション（ログブック、機材、予定、お気に入りスポット）およびユーザードキュメントを一括物理削除した上で、Firebase Authentication アカウントを完全に抹消します。
+
+### 7. クラウドデータ同期・永続化（Cloud Firestore）
+- **ユーザー専用サブコレクション構造**:
+  - ログブック（`dive_logs`）、マイ機材（`gear_items`）、トリップ予定（`dive_schedules`）、お気に入りスポット（`favorite_spots`）を `/users/{userId}/...` 配下に保存・同期。
+  - セキュリティルール（`firestore.rules`）により本人以外のアクセスを物理遮断。
+- **マルチデバイス・リアルタイム同期**:
+  - 端末変更時や再インストール時にも、ログインするだけで全ての潜水ログ・機材メンテ状況・予定が即座に復元。
+- **洋上・ボート上でのオフライン永続化キャッシュ（Offline Persistence）**:
+  - `Settings(persistenceEnabled: true, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED)` による端末ローカルキャッシュ設定。
+  - 電波圏外の海・離島でも直前のログブック・機材・予定を高速表示。圏外時のログ追記もローカルキャッシュにキューイングされ、電波復旧時に自動同期。
+  - キャッシュ未初期化の初回オフライン起動時でも代表9スポットを安全フォールバック表示。
+- **クリーンアーキテクチャによるシームレスなDI切り替え**:
+  - 認証状態（`authStateProvider`）に応じて、インメモリ実装とFirestore実装を自動切り替え。テストや未ログイン時も一切コードを改変せずに動作可能。
+
 ---
+
 
 ## 🏛️ アーキテクチャ設計
 
@@ -153,7 +187,8 @@ lib/
 │   │   │       └── widgets/
 │   │   │           └── dive_log_summary_card.dart# 一覧上部サマリーカード
 │   │   └── infrastructure/                 # インフラ層（データ永続化実装、外部連携）
-│   │       └── repositories/in_memory_dive_log_repository.dart
+│   │       ├── repositories/firestore_dive_log_repository.dart # Firestore同期実装
+│   │       └── repositories/in_memory_dive_log_repository.dart # テスト・未ログイン用
 │   ├── schedule/                           # ② スケジュール管理機能（カレンダーUI）
 │   │   ├── domain/
 │   │   │   ├── entities/dive_schedule.dart
@@ -171,6 +206,8 @@ lib/
 │   │   │           ├── schedule_detail_sheet.dart # 予定詳細ボトムシート
 │   │   │           └── schedule_form_dialog.dart  # 予定追加ダイアログ
 │   │   └── infrastructure/
+│   │       ├── repositories/firestore_schedule_repository.dart # Firestore同期実装
+│   │       └── repositories/in_memory_schedule_repository.dart # テスト・未ログイン用
 │   ├── dive_spot/                          # ③ ダイビングポイント管理 & 共通マップ
 │   │   ├── domain/                         # ドメイン層（エンティティ、リポジトリIF）
 │   │   │   ├── entities/dive_spot.dart
@@ -183,6 +220,7 @@ lib/
 │   │   │       ├── dive_spot_select_modal.dart # ポイント検索・選択モーダル
 │   │   │       └── widgets/spot_map_widget.dart # OpenStreetMap共通地図
 │   │   └── infrastructure/                 # インフラ層
+│   │       ├── repositories/firestore_dive_spot_repository.dart # Firestore同期実装
 │   │       └── repositories/in_memory_dive_spot_repository.dart # 日本の代表的スポットプリセット
 │   ├── weather/                            # ④ 海況・海洋気象予報（Open-Meteo連携）
 │   │   ├── domain/                         # エンティティ（MarineWeather）、リポジトリIF
@@ -208,8 +246,46 @@ lib/
 │       │           ├── gear_summary_card.dart     # メンテナンス状況サマリー
 │       │           └── overhaul_status_badge.dart # OHステータスバッジ
 │       └── infrastructure/                 # インフラ層
-│           └── repositories/in_memory_gear_repository.dart
-└── main.dart                               # エントリーポイント (ProviderScope)
+│           ├── repositories/firestore_gear_repository.dart # Firestore同期実装
+│           └── repositories/in_memory_gear_repository.dart # テスト・未ログイン用
+│   └── auth/                               # ⑥ アカウント・認証・プロファイル機能 (Firebase Auth & Firestore)
+│       ├── domain/                         # ドメイン層 (Pure Dart)
+│       │   ├── entities/user_account.dart  # ユーザー情報・Cカード情報
+│       │   ├── entities/diver_certification.dart # 指導団体・ランク定数
+│       │   ├── errors/auth_failure.dart    # 認証エラー定義
+│       │   ├── repositories/auth_repository.dart # 認証リポジトリIF
+│       │   └── repositories/user_repository.dart # プロファイルリポジトリIF
+│       ├── usecase/                        # ユースケース層 (Pure Dart)
+│       │   ├── sign_in_with_email.dart
+│       │   ├── sign_up_with_email.dart
+│       │   ├── sign_in_with_google.dart
+│       │   ├── sign_out.dart
+│       │   ├── send_password_reset.dart
+│       │   ├── watch_auth_state.dart
+│       │   ├── get_user_profile.dart
+│       │   ├── watch_user_profile.dart
+│       │   ├── update_user_profile.dart
+│       │   ├── sync_initial_profile.dart
+│       │   └── delete_account.dart         # 退会・アカウント完全削除
+│       ├── interface/                      # UI・状態管理 (Riverpod)
+│       │   ├── controllers/auth_controller.dart
+│       │   ├── controllers/user_profile_controller.dart
+│       │   └── views/
+│       │       ├── sign_in_page.dart       # サインイン画面
+│       │       ├── sign_up_page.dart       # 新規登録画面
+│       │       ├── password_reset_page.dart# パスワード再設定画面
+│       │       ├── profile_page.dart       # アカウント設定・Cカード表示
+│       │       ├── terms_of_service_page.dart # 利用規約画面
+│       │       ├── privacy_policy_page.dart # プライバシーポリシー画面
+│       │       └── widgets/
+│       │           └── edit_diver_profile_dialog.dart # Cカード編集モーダル
+│       └── infrastructure/                 # インフラ層 (Firebase SDK, In-Memory)
+│           ├── datasources/firebase_auth_datasource.dart
+│           ├── repositories/firebase_auth_repository.dart
+│           ├── repositories/firestore_user_repository.dart
+│           ├── repositories/in_memory_auth_repository.dart
+│           └── repositories/in_memory_user_repository.dart
+└── main.dart                               # エントリーポイント (Firebase初期化, ProviderScope)
 ```
 
 ---

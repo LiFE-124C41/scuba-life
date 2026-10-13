@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/entities/gear_item.dart';
 import '../../domain/repositories/gear_repository.dart';
+import '../../../auth/interface/controllers/auth_controller.dart';
+import '../../infrastructure/repositories/firestore_gear_repository.dart';
 import '../../infrastructure/repositories/in_memory_gear_repository.dart';
 import '../../usecase/decrement_gear_dives.dart';
 import '../../usecase/delete_gear_item.dart';
@@ -11,7 +13,12 @@ import '../../usecase/record_overhaul.dart';
 import '../../usecase/save_gear_item.dart';
 
 /// リポジトリプロバイダー
+/// ログイン中は FirestoreGearRepository、未ログインやテスト時は InMemoryGearRepository を返却
 final gearRepositoryProvider = Provider<GearRepository>((ref) {
+  final authUser = ref.watch(authStateProvider).asData?.value;
+  if (authUser != null) {
+    return FirestoreGearRepository(userId: authUser.id);
+  }
   return InMemoryGearRepository();
 });
 

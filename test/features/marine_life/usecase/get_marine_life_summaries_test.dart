@@ -154,5 +154,27 @@ void main() {
       expect(result.length, 4);
       expect(result.last.name, 'クマノミ');
     });
+
+    test('ログが0件の場合に例外（unmodifiable listエラー等）をスローせず空リストを返却すること', () async {
+      // Arrange: ログが0件の空リポジトリ
+      final emptyRepo = MockDiveLogRepository();
+      final useCase = GetMarineLifeSummaries(emptyRepo);
+
+      // Act & Assert: デフォルトソート、各ソート指定で例外が出ないこと
+      final resultDefault = await useCase(const MarineLifeFilterParams());
+      expect(resultDefault, isEmpty);
+
+      final resultRecent = await useCase(
+        const MarineLifeFilterParams(
+          sortOrder: MarineLifeSortOrder.recentlyEncountered,
+        ),
+      );
+      expect(resultRecent, isEmpty);
+
+      final resultName = await useCase(
+        const MarineLifeFilterParams(sortOrder: MarineLifeSortOrder.nameAsc),
+      );
+      expect(resultName, isEmpty);
+    });
   });
 }

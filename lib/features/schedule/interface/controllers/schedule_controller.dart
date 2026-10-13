@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/entities/dive_schedule.dart';
 import '../../domain/repositories/dive_schedule_repository.dart';
+import '../../../auth/interface/controllers/auth_controller.dart';
+import '../../infrastructure/repositories/firestore_schedule_repository.dart';
 import '../../infrastructure/repositories/in_memory_dive_schedule_repository.dart';
 import '../../usecase/add_dive_schedule.dart';
 import '../../usecase/delete_dive_schedule.dart';
@@ -9,7 +11,12 @@ import '../../usecase/get_dive_schedules.dart';
 import '../../usecase/update_dive_schedule.dart';
 
 /// リポジトリプロバイダー
+/// ログイン中は FirestoreScheduleRepository、未ログインやテスト時は InMemoryDiveScheduleRepository を返却
 final diveScheduleRepositoryProvider = Provider<DiveScheduleRepository>((ref) {
+  final authUser = ref.watch(authStateProvider).asData?.value;
+  if (authUser != null) {
+    return FirestoreScheduleRepository(userId: authUser.id);
+  }
   return InMemoryDiveScheduleRepository();
 });
 

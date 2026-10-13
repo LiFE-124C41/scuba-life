@@ -74,4 +74,27 @@ void main() {
     expect(find.text('遭遇ログ履歴 (1件)'), findsOneWidget);
     expect(find.text('浅瀬で優雅に泳ぐウミガメに遭遇。'), findsOneWidget);
   });
+
+  testWidgets('MarineLifePage: ログが0件のときにエラーなく空状態UIが表示されること',
+      (WidgetTester tester) async {
+    // Arrange: ログが0件のリポジトリ
+    final mockRepo = MockDiveLogRepository([]);
+
+    // Act
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          diveLogRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+        child: const MaterialApp(
+          home: MarineLifePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Assert: エラーが表示されず、「記録された生き物がまだありません」が表示されること
+    expect(find.textContaining('エラーが発生しました'), findsNothing);
+    expect(find.text('記録された生き物がまだありません'), findsOneWidget);
+  });
 }
