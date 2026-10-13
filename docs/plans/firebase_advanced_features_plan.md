@@ -296,12 +296,12 @@ gantt
 
 開発の進捗に合わせて本チェックリストを更新します。
 
-- [ ] **M-Ext 1: 品質基盤 (Crashlytics & Analytics)**
-  - [ ] `firebase_crashlytics` & `firebase_analytics` パッケージ追加
-  - [ ] `main.dart` グローバルエラー捕捉ハンドラ実装
-  - [ ] オフライン状態メタデータ連携
-  - [ ] 主要イベント（ログ作成・SAC計算・機材更新）の計測配線
-  - [ ] テスト実行 & 解析エラー0件確認
+- [x] **M-Ext 1: 品質基盤 (Crashlytics & Analytics) 【完了 ✅】**
+  - [x] `firebase_crashlytics` & `firebase_analytics` パッケージ追加
+  - [x] `main.dart` グローバルエラー捕捉ハンドラ実装 (`FlutterError.onError`, `PlatformDispatcher.instance.onError`)
+  - [x] オフライン状態・Cカード情報・ユーザーIDメタデータ連携 (`monitoringSyncProvider`)
+  - [x] 主要イベント（ログ作成・SAC計算・機材更新・タブ画面遷移）の計測配線
+  - [x] 全205件テスト合格 & 解析エラー0件確認
 - [ ] **M-Ext 2: Cカード電子化 & Storage基盤**
   - [ ] `firebase_storage` パッケージ追加 & `storage.rules` 定義
   - [ ] `MediaRepository` 抽象インターフェース策定 (Pure Dart)

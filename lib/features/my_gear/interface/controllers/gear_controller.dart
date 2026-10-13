@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/monitoring/interface/monitoring_providers.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/entities/gear_item.dart';
 import '../../domain/repositories/gear_repository.dart';
@@ -131,6 +132,10 @@ class GearListNotifier extends Notifier<GearListState> {
     try {
       final saveItem = ref.read(saveGearItemUseCaseProvider);
       await saveItem(gear);
+      ref.read(analyticsServiceProvider).logGearCreated(
+            name: gear.name,
+            category: gear.category.name,
+          );
       await loadGear();
     } catch (e) {
       state = state.copyWith(error: e);
@@ -163,6 +168,11 @@ class GearListNotifier extends Notifier<GearListState> {
           memo: memo,
         ),
       );
+      ref.read(analyticsServiceProvider).logOverhaulCompleted(
+            gearName: updated.name,
+            category: updated.category.name,
+            divesReset: updated.divesSinceOverhaul,
+          );
       await loadGear();
       return updated;
     } catch (e) {

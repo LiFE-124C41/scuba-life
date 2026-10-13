@@ -8,6 +8,7 @@ import '../../usecase/save_dive_log.dart';
 import '../../usecase/delete_dive_log.dart';
 import '../../../auth/interface/controllers/auth_controller.dart';
 import '../../../my_gear/interface/controllers/gear_controller.dart';
+import '../../../../core/monitoring/interface/monitoring_providers.dart';
 import '../../../../core/usecase/usecase.dart';
 
 // --- DI Providers ---
@@ -59,6 +60,24 @@ class DiveLogListNotifier extends AsyncNotifier<List<DiveLog>> {
     state = await AsyncValue.guard(() async {
       final saveLog = ref.read(saveDiveLogUseCaseProvider);
       await saveLog(log);
+
+      // アナリティクスイベント計測
+      final analytics = ref.read(analyticsServiceProvider);
+      analytics.logDiveLogCreated(
+        spotName: log.location,
+        maxDepth: log.maxDepthMeter,
+        durationMinutes: log.bottomTimeMinutes,
+        rating: log.rating,
+      );
+      final sacRate = log.calculateSacRate();
+      if (sacRate > 0) {
+        analytics.logSacCalculated(
+          sacRate: sacRate,
+          avgDepth: log.avgDepthMeter,
+          durationMinutes: log.bottomTimeMinutes,
+        );
+      }
+
       final getLogs = ref.read(getDiveLogsUseCaseProvider);
       return await getLogs(const NoParams());
     });
