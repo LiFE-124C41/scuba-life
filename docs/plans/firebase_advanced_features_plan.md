@@ -302,13 +302,14 @@ gantt
   - [x] オフライン状態・Cカード情報・ユーザーIDメタデータ連携 (`monitoringSyncProvider`)
   - [x] 主要イベント（ログ作成・SAC計算・機材更新・タブ画面遷移）の計測配線
   - [x] 全205件テスト合格 & 解析エラー0件確認
-- [ ] **M-Ext 2: Cカード電子化 & Storage基盤**
-  - [ ] `firebase_storage` パッケージ追加 & `storage.rules` 定義
-  - [ ] `MediaRepository` 抽象インターフェース策定 (Pure Dart)
-  - [ ] `FirebaseStorageRepository` & 画像圧縮ユーティリティ実装
-  - [ ] `UserAccount` エンティティ拡張 (`cCardFrontUrl`, `cCardBackUrl`)
-  - [ ] `ProfilePage` に Cカード表裏アップロード & フルスクリーン閲覧UI追加
-  - [ ] 小型端末（360px）レスポンシブテスト & 単体テスト作成
+- [x] **M-Ext 2: Cカード電子化 & Storage基盤 【完了 ✅】**
+  - [x] `firebase_storage` & `image_picker` パッケージ追加 & `storage.rules` 定義
+  - [x] `MediaStorageRepository` & `ImagePickerService` 抽象インターフェース策定 (Pure Dart)
+  - [x] `FirebaseMediaStorageRepository` & `DefaultImagePickerService` 実装
+  - [x] `UserAccount` エンティティ拡張 (`cCardFrontUrl`, `cCardBackUrl`)
+  - [x] `UploadCCardImage` & `DeleteCCardImage` UseCase 実装
+  - [x] `ProfilePage` に Cカード電子ライセンス証カード（`CCardImageCard`）およびフルスクリーン拡大ビューアー（`CCardFullScreenViewer`）追加
+  - [x] 小型端末（幅360px）レスポンシブテスト & 単体テスト作成（全214件テスト合格 & 解析エラー0件）
 - [ ] **M-Ext 3: ログブック写真添付 & ストレージクリーンアップ**
   - [ ] `DiveLog` エンティティ拡張 (`photoUrls: List<String>`)
   - [ ] `FirestoreDiveLogRepository` スキーママッピング更新

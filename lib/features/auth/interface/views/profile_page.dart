@@ -5,6 +5,7 @@ import '../../domain/entities/user_account.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/user_profile_controller.dart';
 import 'widgets/edit_diver_profile_dialog.dart';
+import 'widgets/c_card_image_card.dart';
 import 'terms_of_service_page.dart';
 import 'privacy_policy_page.dart';
 
@@ -328,6 +329,10 @@ class ProfilePage extends ConsumerWidget {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 16),
+
+                      // 2.5 Cカード写真 (電子ライセンス証)
+                      CCardImageCard(user: user),
                       const SizedBox(height: 16),
 
                       // 3. アカウント詳細情報リスト
