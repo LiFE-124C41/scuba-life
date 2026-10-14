@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../notification_providers.dart';
+import '../push_notification_providers.dart';
 
 /// 安全リマインダー通知設定画面
 class NotificationSettingsPage extends ConsumerWidget {
@@ -76,6 +77,49 @@ class NotificationSettingsPage extends ConsumerWidget {
                   enabled: settings.notificationsEnabled,
                   onChanged: (val) => notifier.toggleTripReminder(val),
                 ),
+                const SizedBox(height: 24),
+
+                // リモートプッシュ通知セクション
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'リモートプッシュ通知設定 (FCM)',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueGrey,
+                    ),
+                  ),
+                ),
+
+                // 海況・気象アラートプッシュ
+                _buildSettingCard(
+                  context: context,
+                  icon: Icons.waves,
+                  iconColor: Colors.cyan.shade700,
+                  title: '海況・気象アラート通知',
+                  description:
+                      '急な海況悪化や波浪・強風・台風接近アラートをリアルタイムでお知らせします',
+                  value: settings.notificationsEnabled &&
+                      settings.weatherAlertPushEnabled,
+                  enabled: settings.notificationsEnabled,
+                  onChanged: (val) => notifier.toggleWeatherAlertPush(val),
+                ),
+                const SizedBox(height: 12),
+
+                // 運営・スポット新着情報プッシュ
+                _buildSettingCard(
+                  context: context,
+                  icon: Icons.campaign_outlined,
+                  iconColor: Colors.deepOrange,
+                  title: '運営・スポット新着情報',
+                  description:
+                      '新しいおすすめダイブスポットの追加やアップデート情報をお知らせします',
+                  value: settings.notificationsEnabled &&
+                      settings.announcementPushEnabled,
+                  enabled: settings.notificationsEnabled,
+                  onChanged: (val) => notifier.toggleAnnouncementPush(val),
+                ),
                 const SizedBox(height: 28),
 
                 // テスト通知アクションエリア
@@ -95,7 +139,7 @@ class NotificationSettingsPage extends ConsumerWidget {
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                '通知の動作テスト',
+                                '通知の動作テスト & FCM情報',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
@@ -140,6 +184,42 @@ class NotificationSettingsPage extends ConsumerWidget {
                                     ),
                                   );
                                 }
+                              },
+                            ),
+                            OutlinedButton.icon(
+                              key: const Key('view_fcm_token_button'),
+                              icon: const Icon(Icons.vpn_key),
+                              label: const Text('FCMデバイストークン確認'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.indigo,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () async {
+                                final token = await ref.read(fcmTokenProvider.future);
+                                if (!context.mounted) return;
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('FCM Registration Token'),
+                                    content: SingleChildScrollView(
+                                      child: SelectableText(
+                                        token ?? 'トークン未取得（実機でのビルドまたはFirebase接続をご確認ください）',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontFamily: 'monospace',
+                                        ),
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: const Text('閉じる'),
+                                      ),
+                                    ],
+                                  ),
+                                );
                               },
                             ),
                           ],

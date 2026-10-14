@@ -139,6 +139,18 @@ class NotificationSettingsNotifier
     );
   }
 
+  Future<void> toggleWeatherAlertPush(bool enabled) async {
+    await updateSettings(
+      state.settings.copyWith(weatherAlertPushEnabled: enabled),
+    );
+  }
+
+  Future<void> toggleAnnouncementPush(bool enabled) async {
+    await updateSettings(
+      state.settings.copyWith(announcementPushEnabled: enabled),
+    );
+  }
+
   /// テスト通知を即時送信
   Future<void> sendTestNotification() async {
     try {

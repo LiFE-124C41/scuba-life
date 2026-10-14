@@ -52,6 +52,8 @@ dependencies:
   timezone: ^0.11.2
   firebase_remote_config: ^6.7.0
   firebase_app_check: ^0.4.8
+  firebase_performance: ^0.11.6
+  firebase_messaging: ^16.7.0
 
 
 dev_dependencies:

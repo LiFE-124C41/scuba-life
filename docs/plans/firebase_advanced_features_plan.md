@@ -333,3 +333,17 @@ gantt
   - [x] 緊急メンテナンス・障害バナーUI実装 (`MaintenanceBannerWidget` / 360pxレスポンシブ / dismiss対応)
   - [x] `AppCheckService` 実装 (Play Integrity / DeviceCheck / DebugProvider) & `main.dart` 統合
   - [x] README.md 更新 & 全267件テスト合格・Android APKビルド検証完了
+- [x] **M-Ext 6: 通信・処理レイテンシ可視化 (Firebase Performance Monitoring) 【完了 ✅】**
+  - [x] `firebase_performance` パッケージ導入
+  - [x] `PerformanceTracker` 抽象IF & `FirebasePerformanceTracker` (Pure Dart / 安全なフォールバック完備)
+  - [x] 単体テスト用 `InMemoryPerformanceTracker` 実装（トレース・属性・メトリック記録検証）
+  - [x] `main.dart` への初期化組み込み & 全単体テスト作成（合格確認）
+- [x] **M-Ext 7: リアルタイム・プッシュ配信基盤 (Firebase Cloud Messaging) 【完了 ✅】**
+  - [x] `firebase_messaging` パッケージ導入 & `AndroidManifest.xml` デフォルト通知チャネル・アイコン設定
+  - [x] `PushNotificationRepository` 抽象IF & `FirebasePushNotificationRepository` 実装 (Pure Dart / フォールバック完備)
+  - [x] フォアグラウンド受信時のローカル通知（通知バナー）自動表示連携 (`localNotificationRepository.showNotification`)
+  - [x] バックグラウンド・アプリ終了時メッセージハンドラ (`firebaseMessagingBackgroundHandler`) 実装
+  - [x] トピック自動購読・同期 (`weather_alerts` 海況気象アラート、`announcements` 運営お知らせ)
+  - [x] `NotificationSettings` 拡張 (`weatherAlertPushEnabled`, `announcementPushEnabled`) & 通知設定画面UI更新
+  - [x] FCM デバイストークン確認・コピーダイアログUI追加 (`Key('view_fcm_token_button')`)
+  - [x] 単体テスト & ウィジェットテスト作成（全275件テスト合格 & 解析エラー0件）

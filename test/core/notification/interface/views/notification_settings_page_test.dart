@@ -4,22 +4,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scuba_life/core/notification/domain/entities/notification_settings.dart';
 import 'package:scuba_life/core/notification/infrastructure/in_memory_notification_repository.dart';
 import 'package:scuba_life/core/notification/infrastructure/in_memory_notification_settings_repository.dart';
+import 'package:scuba_life/core/notification/infrastructure/in_memory_push_notification_repository.dart';
 import 'package:scuba_life/core/notification/interface/notification_providers.dart';
+import 'package:scuba_life/core/notification/interface/push_notification_providers.dart';
 import 'package:scuba_life/core/notification/interface/views/notification_settings_page.dart';
 
 void main() {
   late InMemoryNotificationRepository notificationRepository;
   late InMemoryNotificationSettingsRepository settingsRepository;
+  late InMemoryPushNotificationRepository pushNotificationRepository;
 
   setUp(() {
     notificationRepository = InMemoryNotificationRepository();
+    pushNotificationRepository = InMemoryPushNotificationRepository();
     settingsRepository = InMemoryNotificationSettingsRepository(
       const NotificationSettings(
         notificationsEnabled: true,
         gearOverhaulReminderEnabled: true,
         tripReminderEnabled: true,
+        weatherAlertPushEnabled: true,
+        announcementPushEnabled: true,
       ),
     );
+  });
+
+  tearDown(() {
+    pushNotificationRepository.dispose();
   });
 
   Widget buildTestWidget({Size screenSize = const Size(390, 844)}) {
@@ -27,6 +37,7 @@ void main() {
       overrides: [
         notificationRepositoryProvider.overrideWithValue(notificationRepository),
         notificationSettingsRepositoryProvider.overrideWithValue(settingsRepository),
+        pushNotificationRepositoryProvider.overrideWithValue(pushNotificationRepository),
       ],
       child: MaterialApp(
         home: MediaQuery(
@@ -38,7 +49,7 @@ void main() {
   }
 
   group('NotificationSettingsPage Widget Tests', () {
-    testWidgets('初期描画で3つのトグルとテスト通知送信ボタンが表示されること', (tester) async {
+    testWidgets('初期描画で設定トグルとテスト通知送信ボタンが表示されること', (tester) async {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
@@ -47,11 +58,12 @@ void main() {
       expect(find.text('プッシュ通知を有効にする'), findsOneWidget);
       expect(find.text('機材オーバーホール目安通知'), findsOneWidget);
       expect(find.text('トリップ前日準備リマインダー'), findsOneWidget);
-      expect(find.text('通知の動作テスト'), findsOneWidget);
-      expect(find.byKey(const Key('send_test_notification_button')), findsOneWidget);
+      expect(find.text('リモートプッシュ通知設定 (FCM)'), findsOneWidget);
+      expect(find.text('海況・気象アラート通知'), findsOneWidget);
+      expect(find.text('運営・スポット新着情報'), findsOneWidget);
 
       final switches = find.byType(Switch);
-      expect(switches, findsNWidgets(3));
+      expect(switches, findsNWidgets(5));
     });
 
     testWidgets('プッシュ通知全体をOFFにすると配下のスイッチが無効化されること', (tester) async {
@@ -72,6 +84,8 @@ void main() {
       expect(switches[0].value, isFalse);
       expect(switches[1].onChanged, isNull);
       expect(switches[2].onChanged, isNull);
+      expect(switches[3].onChanged, isNull);
+      expect(switches[4].onChanged, isNull);
     });
 
     testWidgets('テスト通知送信ボタンをタップすると即時テスト通知が発行されスナックバーが表示されること', (tester) async {
@@ -79,7 +93,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final testButton = find.byKey(const Key('send_test_notification_button'));
-      await tester.ensureVisible(testButton);
+      await tester.scrollUntilVisible(testButton, 200);
       await tester.tap(testButton);
       await tester.pumpAndSettle();
 
@@ -94,7 +108,6 @@ void main() {
     });
 
     testWidgets('小型端末（幅360px、2376x968等の縦向き）でレンダリングしてもオーバーフローしないこと', (tester) async {
-      // 360 x 800 の小型画面サイズ
       await tester.binding.setSurfaceSize(const Size(360, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -107,11 +120,13 @@ void main() {
       expect(find.text('トリップ前日準備リマインダー'), findsOneWidget);
 
       // 下部までスクロールしてもエラーが出ないこと
-      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      final testButton = find.byKey(const Key('send_test_notification_button'));
+      await tester.scrollUntilVisible(testButton, 200);
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
       expect(find.byKey(const Key('send_test_notification_button')), findsOneWidget);
+      expect(find.byKey(const Key('view_fcm_token_button')), findsOneWidget);
     });
   });
 }

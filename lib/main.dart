@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
+import 'core/notification/infrastructure/firebase_push_notification_repository.dart';
 import 'core/notification/infrastructure/flutter_local_notification_repository.dart';
+import 'core/performance/infrastructure/firebase_performance_tracker.dart';
 import 'core/remote_config/infrastructure/firebase_remote_config_repository.dart';
 import 'core/security/app_check_service.dart';
 import 'firebase_options.dart';
@@ -38,6 +40,14 @@ Future<void> main() async {
     debugPrint('Firebase initialization / Crashlytics setup error: $e');
   }
 
+  // Firebase Performance Monitoring の初期化
+  try {
+    final performanceTracker = FirebasePerformanceTracker();
+    await performanceTracker.initialize();
+  } catch (e) {
+    debugPrint('Performance Tracker setup error: $e');
+  }
+
   // Firebase App Check の有効化
   try {
     await AppCheckService.initialize();
@@ -55,11 +65,24 @@ Future<void> main() async {
   }
 
   // 通知リポジトリの初期化
+  late final FlutterLocalNotificationRepository notificationRepo;
   try {
-    final notificationRepo = FlutterLocalNotificationRepository();
+    notificationRepo = FlutterLocalNotificationRepository();
     await notificationRepo.initialize();
   } catch (e) {
     debugPrint('Notification setup error: $e');
+  }
+
+  // Firebase Cloud Messaging (FCM) プッシュ通知の初期化
+  try {
+    final pushRepo = FirebasePushNotificationRepository(
+      localNotificationRepository: notificationRepo,
+    );
+    await pushRepo.initialize();
+    pushRepo.subscribeToTopic('weather_alerts').ignore();
+    pushRepo.subscribeToTopic('announcements').ignore();
+  } catch (e) {
+    debugPrint('Push Notification setup error: $e');
   }
 
   runApp(

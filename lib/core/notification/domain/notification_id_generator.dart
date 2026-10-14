@@ -10,6 +10,12 @@ class NotificationIdGenerator {
     return 2000000 + (scheduleId.hashCode.abs() % 900000);
   }
 
+  /// リモートプッシュ通知（FCM）用の32bit通知ID（3,000,000〜3,899,999）
+  static int forPushMessage(String? messageId) {
+    if (messageId == null || messageId.isEmpty) return 3000000;
+    return 3000000 + (messageId.hashCode.abs() % 900000);
+  }
+
   /// テスト通知用のID
   static const int testNotificationId = 999999;
 }

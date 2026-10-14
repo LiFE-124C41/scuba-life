@@ -18,6 +18,12 @@ class NotificationSettings {
   /// OH残り本数アラート閾値（本）
   final int overhaulDivesThreshold;
 
+  /// 海況・気象アラートプッシュ通知（FCM）の有効/無効
+  final bool weatherAlertPushEnabled;
+
+  /// 運営・スポット新着お知らせプッシュ通知（FCM）の有効/無効
+  final bool announcementPushEnabled;
+
   const NotificationSettings({
     this.notificationsEnabled = true,
     this.gearOverhaulReminderEnabled = true,
@@ -25,6 +31,8 @@ class NotificationSettings {
     this.tripReminderHour = 18,
     this.overhaulDaysBefore = 30,
     this.overhaulDivesThreshold = 10,
+    this.weatherAlertPushEnabled = true,
+    this.announcementPushEnabled = true,
   });
 
   NotificationSettings copyWith({
@@ -34,6 +42,8 @@ class NotificationSettings {
     int? tripReminderHour,
     int? overhaulDaysBefore,
     int? overhaulDivesThreshold,
+    bool? weatherAlertPushEnabled,
+    bool? announcementPushEnabled,
   }) {
     return NotificationSettings(
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
@@ -44,6 +54,10 @@ class NotificationSettings {
       overhaulDaysBefore: overhaulDaysBefore ?? this.overhaulDaysBefore,
       overhaulDivesThreshold:
           overhaulDivesThreshold ?? this.overhaulDivesThreshold,
+      weatherAlertPushEnabled:
+          weatherAlertPushEnabled ?? this.weatherAlertPushEnabled,
+      announcementPushEnabled:
+          announcementPushEnabled ?? this.announcementPushEnabled,
     );
   }
 
@@ -55,6 +69,8 @@ class NotificationSettings {
       'tripReminderHour': tripReminderHour,
       'overhaulDaysBefore': overhaulDaysBefore,
       'overhaulDivesThreshold': overhaulDivesThreshold,
+      'weatherAlertPushEnabled': weatherAlertPushEnabled,
+      'announcementPushEnabled': announcementPushEnabled,
     };
   }
 
@@ -67,6 +83,10 @@ class NotificationSettings {
       tripReminderHour: json['tripReminderHour'] as int? ?? 18,
       overhaulDaysBefore: json['overhaulDaysBefore'] as int? ?? 30,
       overhaulDivesThreshold: json['overhaulDivesThreshold'] as int? ?? 10,
+      weatherAlertPushEnabled:
+          json['weatherAlertPushEnabled'] as bool? ?? true,
+      announcementPushEnabled:
+          json['announcementPushEnabled'] as bool? ?? true,
     );
   }
 
@@ -80,7 +100,9 @@ class NotificationSettings {
           tripReminderEnabled == other.tripReminderEnabled &&
           tripReminderHour == other.tripReminderHour &&
           overhaulDaysBefore == other.overhaulDaysBefore &&
-          overhaulDivesThreshold == other.overhaulDivesThreshold;
+          overhaulDivesThreshold == other.overhaulDivesThreshold &&
+          weatherAlertPushEnabled == other.weatherAlertPushEnabled &&
+          announcementPushEnabled == other.announcementPushEnabled;
 
   @override
   int get hashCode =>
@@ -89,5 +111,7 @@ class NotificationSettings {
       tripReminderEnabled.hashCode ^
       tripReminderHour.hashCode ^
       overhaulDaysBefore.hashCode ^
-      overhaulDivesThreshold.hashCode;
+      overhaulDivesThreshold.hashCode ^
+      weatherAlertPushEnabled.hashCode ^
+      announcementPushEnabled.hashCode;
 }
