@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
 import 'core/notification/infrastructure/flutter_local_notification_repository.dart';
+import 'core/remote_config/infrastructure/firebase_remote_config_repository.dart';
+import 'core/security/app_check_service.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -34,6 +36,22 @@ Future<void> main() async {
     }
   } catch (e) {
     debugPrint('Firebase initialization / Crashlytics setup error: $e');
+  }
+
+  // Firebase App Check の有効化
+  try {
+    await AppCheckService.initialize();
+  } catch (e) {
+    debugPrint('App Check setup error: $e');
+  }
+
+  // Remote Config の初期化 & フェッチ
+  try {
+    final remoteConfigRepo = FirebaseRemoteConfigRepository();
+    await remoteConfigRepo.initialize();
+    remoteConfigRepo.fetchAndActivate().ignore();
+  } catch (e) {
+    debugPrint('Remote Config setup error: $e');
   }
 
   // 通知リポジトリの初期化

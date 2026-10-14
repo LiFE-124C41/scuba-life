@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/monitoring/interface/monitoring_providers.dart';
+import '../core/remote_config/interface/views/maintenance_banner_widget.dart';
 import '../features/auth/interface/controllers/auth_controller.dart';
 import '../features/auth/interface/views/sign_in_page.dart';
 import '../features/logbook/interface/views/dive_log_page.dart';
@@ -74,7 +75,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const MaintenanceBannerWidget(),
+            Expanded(child: _pages[_currentIndex]),
+          ],
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {

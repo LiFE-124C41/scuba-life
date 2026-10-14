@@ -326,9 +326,10 @@ gantt
   - [x] ダイビング予定前日リマインダー通知連動 (`ScheduleTripPackingReminder` / `CancelTripPackingReminder`)
   - [x] 通知設定画面 (`NotificationSettingsPage`) & プロフィール画面への設定導線追加
   - [x] 通知スケジュール・キャンセル・設定UI単体 & 小型画面（幅360px）ウィジェットテスト作成（全257件テスト合格 & 解析エラー0件）
-- [ ] **M-Ext 5: 動的運用 & セキュリティ (Remote Config & App Check)**
-  - [ ] `firebase_remote_config` パッケージ導入
-  - [ ] スポットマスタの動的取得 & ローカルマスタとのマージ実装
-  - [ ] 緊急メンテナンスバナーUIの実装
-  - [ ] `firebase_app_check` 設定 (Play Integrity / DeviceCheck)
-  - [ ] README.md 更新 & 全体リグレッションテスト実施
+- [x] **M-Ext 5: 動的運用 & セキュリティ (Remote Config & App Check) 【完了 ✅】**
+  - [x] `firebase_remote_config` & `firebase_app_check` パッケージ導入
+  - [x] `RemoteConfigRepository` 抽象IF & `FirebaseRemoteConfigRepository` 実装 (Pure Dart & フォールバック完備)
+  - [x] スポットマスタ動的マージ実装 (`GetDiveSpotsUseCase.mergeSpots` / `DiveSpotListNotifier`)
+  - [x] 緊急メンテナンス・障害バナーUI実装 (`MaintenanceBannerWidget` / 360pxレスポンシブ / dismiss対応)
+  - [x] `AppCheckService` 実装 (Play Integrity / DeviceCheck / DebugProvider) & `main.dart` 統合
+  - [x] README.md 更新 & 全267件テスト合格・Android APKビルド検証完了
