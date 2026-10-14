@@ -6,8 +6,11 @@ import '../../infrastructure/repositories/in_memory_dive_log_repository.dart';
 import '../../usecase/get_dive_logs.dart';
 import '../../usecase/save_dive_log.dart';
 import '../../usecase/delete_dive_log.dart';
+import '../../usecase/upload_dive_log_photo.dart';
+import '../../usecase/delete_dive_log_photo.dart';
 import '../../../auth/interface/controllers/auth_controller.dart';
 import '../../../my_gear/interface/controllers/gear_controller.dart';
+import '../../../../core/media/interface/media_providers.dart';
 import '../../../../core/monitoring/interface/monitoring_providers.dart';
 import '../../../../core/usecase/usecase.dart';
 
@@ -18,7 +21,11 @@ import '../../../../core/usecase/usecase.dart';
 final diveLogRepositoryProvider = Provider<DiveLogRepository>((ref) {
   final authUser = ref.watch(authStateProvider).asData?.value;
   if (authUser != null) {
-    return FirestoreDiveLogRepository(userId: authUser.id);
+    final mediaStorage = ref.watch(mediaStorageRepositoryProvider);
+    return FirestoreDiveLogRepository(
+      userId: authUser.id,
+      mediaStorageRepository: mediaStorage,
+    );
   }
   return InMemoryDiveLogRepository();
 });
@@ -39,6 +46,18 @@ final saveDiveLogUseCaseProvider = Provider<SaveDiveLog>((ref) {
 final deleteDiveLogUseCaseProvider = Provider<DeleteDiveLog>((ref) {
   final repository = ref.watch(diveLogRepositoryProvider);
   return DeleteDiveLog(repository);
+});
+
+/// ログ写真アップロードユースケースのProvider
+final uploadDiveLogPhotoUseCaseProvider = Provider<UploadDiveLogPhoto>((ref) {
+  final mediaRepo = ref.watch(mediaStorageRepositoryProvider);
+  return UploadDiveLogPhoto(mediaRepo);
+});
+
+/// ログ写真削除ユースケースのProvider
+final deleteDiveLogPhotoUseCaseProvider = Provider<DeleteDiveLogPhoto>((ref) {
+  final mediaRepo = ref.watch(mediaStorageRepositoryProvider);
+  return DeleteDiveLogPhoto(mediaRepo);
 });
 
 // --- State Controller (Notifier) ---

@@ -251,5 +251,32 @@ void main() {
       // Assert
       expect(updated.selectedGearIds, equals(['gear-1', 'gear-2', 'gear-3']));
     });
+
+    test('photoUrls: 水中写真URL一覧が正しく保持され、copyWithで更新できること', () {
+      // Arrange & Act
+      final log = DiveLog(
+        id: 'photo-test-log',
+        entryTime: baseEntryTime,
+        exitTime: baseExitTime,
+        maxDepthMeter: 18.0,
+        avgDepthMeter: 10.0,
+        startPressureBar: 200,
+        endPressureBar: 50,
+        location: '大瀬崎',
+        photoUrls: ['https://example.com/p1.webp'],
+      );
+
+      // Assert
+      expect(log.photoUrls, equals(['https://example.com/p1.webp']));
+
+      // Act
+      final updated = log.copyWith(
+        photoUrls: ['https://example.com/p1.webp', 'https://example.com/p2.webp'],
+      );
+
+      // Assert
+      expect(updated.photoUrls.length, equals(2));
+      expect(updated.photoUrls[1], equals('https://example.com/p2.webp'));
+    });
   });
 }

@@ -61,4 +61,32 @@ class FirebaseMediaStorageRepository implements MediaStorageRepository {
       throw MediaStorageFailure.deleteFailed(e.toString());
     }
   }
+
+  @override
+  Future<void> deleteDirectory(String path) async {
+    try {
+      final ref = _storage.ref(path);
+      await _deleteDirectoryRecursive(ref);
+    } on FirebaseException catch (e) {
+      debugPrint('FirebaseStorage deleteDirectory error: ${e.code} - ${e.message}');
+      if (e.code != 'object-not-found') {
+        throw MediaStorageFailure.deleteFailed(e.message);
+      }
+    } catch (e) {
+      if (e is MediaStorageFailure) rethrow;
+      throw MediaStorageFailure.deleteFailed(e.toString());
+    }
+  }
+
+  Future<void> _deleteDirectoryRecursive(Reference dirRef) async {
+    final listResult = await dirRef.listAll();
+    for (final item in listResult.items) {
+      try {
+        await item.delete();
+      } catch (_) {}
+    }
+    for (final prefix in listResult.prefixes) {
+      await _deleteDirectoryRecursive(prefix);
+    }
+  }
 }

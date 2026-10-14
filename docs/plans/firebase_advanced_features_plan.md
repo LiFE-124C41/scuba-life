@@ -312,13 +312,13 @@ gantt
   - [x] `ProfilePage` に Cカード電子ライセンス証カード（`CCardImageCard`）およびフルスクリーン拡大ビューアー（`CCardFullScreenViewer`）追加
   - [x] `ProfileAvatarWidget` 実装（カメラ・ライブラリからの写真選択・変更、拡大表示、削除、アップロード中スピナー）
   - [x] 小型端末（幅360px）レスポンシブテスト & 単体テスト作成（全224件テスト合格 & 解析エラー0件）
-- [ ] **M-Ext 3: ログブック写真添付 & ストレージクリーンアップ**
-  - [ ] `DiveLog` エンティティ拡張 (`photoUrls: List<String>`)
-  - [ ] `FirestoreDiveLogRepository` スキーママッピング更新
-  - [ ] `DiveLogFormPage` 複数写真ピッカーUI実装
-  - [ ] `DiveLogDetailPage` 写真ギャラリー & 拡大モーダル実装
-  - [ ] `DeleteAccount` UseCase に Storage 画像完全消去処理を追加
-  - [ ] 単体テスト & ウィジェットテスト合格確認
+- [x] **M-Ext 3: ログブック写真添付 & ストレージクリーンアップ 【完了 ✅】**
+  - [x] `DiveLog` エンティティ拡張 (`photoUrls: List<String>`)
+  - [x] `FirestoreDiveLogRepository` スキーママッピング更新
+  - [x] `DiveLogFormPage` 複数写真ピッカーUI実装 (`DiveLogPhotoPickerWidget`)
+  - [x] `DiveLogDetailPage` 写真ギャラリー & 拡大モーダル実装 (`DiveLogPhotoGalleryWidget`)
+  - [x] `DeleteAccount` UseCase に Storage 画像完全消去処理を追加 (`mediaStorageRepository.deleteDirectory`)
+  - [x] 単体テスト & ウィジェットテスト合格確認（写真追加・削除・退会ストレージ消去・360pxレスポンシブ）
 - [ ] **M-Ext 4: 安全リマインダー通知 (OH & トリップ)**
   - [ ] `flutter_local_notifications` パッケージ導入 & プラットフォーム権限設定
   - [ ] `NotificationRepository` 抽象IF & ローカル通知サービス実装

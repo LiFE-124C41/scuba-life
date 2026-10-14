@@ -37,6 +37,18 @@ class InMemoryMediaStorageRepository implements MediaStorageRepository {
     storedFiles.remove(path);
   }
 
+  @override
+  Future<void> deleteDirectory(String path) async {
+    if (shouldFailOnDelete) {
+      throw MediaStorageFailure.deleteFailed('Mock delete directory failure');
+    }
+
+    final normalizedPath = path.endsWith('/') ? path : '$path/';
+    storedFiles.removeWhere(
+      (key, _) => key == path || key.startsWith(normalizedPath),
+    );
+  }
+
   void clear() {
     storedFiles.clear();
     shouldFailOnUpload = false;

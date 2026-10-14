@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/media/domain/repositories/media_storage_repository.dart';
 import '../../domain/entities/dive_log.dart';
 import '../../domain/repositories/dive_log_repository.dart';
 
@@ -6,10 +7,12 @@ import '../../domain/repositories/dive_log_repository.dart';
 class FirestoreDiveLogRepository implements DiveLogRepository {
   final FirebaseFirestore _firestore;
   final String userId;
+  final MediaStorageRepository? mediaStorageRepository;
 
   FirestoreDiveLogRepository({
     required this.userId,
     FirebaseFirestore? firestore,
+    this.mediaStorageRepository,
   }) : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _logsCollection =>
@@ -60,6 +63,12 @@ class FirestoreDiveLogRepository implements DiveLogRepository {
 
   @override
   Future<void> deleteLog(String id) async {
+    // ログに紐づく Storage 画像ディレクトリを一括削除
+    if (mediaStorageRepository != null) {
+      try {
+        await mediaStorageRepository!.deleteDirectory('users/$userId/dive_logs/$id');
+      } catch (_) {}
+    }
     await _logsCollection.doc(id).delete();
   }
 
@@ -123,6 +132,7 @@ class FirestoreDiveLogRepository implements DiveLogRepository {
       selectedGearIds: (data['selectedGearIds'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
       equipment: data['equipment'] as String? ?? '',
       notes: data['notes'] as String? ?? '',
+      photoUrls: (data['photoUrls'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
     );
   }
 
@@ -171,6 +181,7 @@ class FirestoreDiveLogRepository implements DiveLogRepository {
       'selectedGearIds': log.selectedGearIds,
       'equipment': log.equipment,
       'notes': log.notes,
+      'photoUrls': log.photoUrls,
     };
   }
 }

@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../dive_spot/interface/views/widgets/spot_map_widget.dart';
 import '../../../my_gear/domain/entities/gear_item.dart';
 import '../../../my_gear/interface/controllers/gear_controller.dart';
+import 'widgets/dive_log_photo_gallery_widget.dart';
 
 /// ダイビングログ全情報閲覧用の詳細画面
 class DiveLogDetailPage extends ConsumerWidget {
@@ -259,6 +260,15 @@ class DiveLogDetailPage extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 12),
+
+              // 1.5 水中写真ギャラリー（写真が登録されている場合に表示）
+              if (log.photoUrls.isNotEmpty) ...[
+                DiveLogPhotoGalleryWidget(
+                  photoUrls: log.photoUrls,
+                  locationName: log.location,
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // 2. 潜水データ・プロファイル (実績とSAC、計画)
               _buildSectionCard(

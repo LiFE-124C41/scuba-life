@@ -42,6 +42,7 @@ void main() {
       selectedGearIds: const ['gear-reg-1', 'gear-bcd-1'],
       equipment: 'スチール10L',
       notes: '透明度良好、快適なダイブ。',
+      photoUrls: const ['https://storage.example.com/photo1.webp', 'https://storage.example.com/photo2.webp'],
     );
 
     setUp(() {
@@ -71,6 +72,7 @@ void main() {
       expect(fetched.marineLife, containsAll(['ミジンベニハゼ', 'タカベ群れ']));
       expect(fetched.selectedGearIds, containsAll(['gear-reg-1', 'gear-bcd-1']));
       expect(fetched.notes, equals('透明度良好、快適なダイブ。'));
+      expect(fetched.photoUrls, containsAll(['https://storage.example.com/photo1.webp', 'https://storage.example.com/photo2.webp']));
     });
 
     test('getAllLogs: 保存された複数のログが一覧取得できること', () async {

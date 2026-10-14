@@ -46,12 +46,13 @@ class DiveLog {
   final String? highTideTime2; // 満潮時間2 (例: "18:50")
   final String? lowTideTime2; // 干潮時間2 (例: "00:15")
 
-  // メンバー・機材・生物・メモ
+  // メンバー・機材・生物・メモ・写真
   final List<String> buddies; // バディ名（複数）
   final List<String> marineLife; // 出会った生物
   final List<String> selectedGearIds; // 機材管理から選択された機材ID一覧
   final String equipment; // 使用した機材（自由記述または選択機材名）
   final String notes; // メモ
+  final List<String> photoUrls; // 水中写真・思い出写真URL一覧 (Cloud Storage)
 
   DiveLog({
     required this.id,
@@ -96,6 +97,7 @@ class DiveLog {
     this.selectedGearIds = const [],
     this.equipment = '',
     this.notes = '',
+    this.photoUrls = const [],
   }) : date = date ?? DateTime(entryTime.year, entryTime.month, entryTime.day) {
     if (entryTime.isAfter(exitTime)) {
       throw ArgumentError('エントリー時間はエグジット時間より前である必要があります。');
@@ -185,6 +187,7 @@ class DiveLog {
     List<String>? selectedGearIds,
     String? equipment,
     String? notes,
+    List<String>? photoUrls,
   }) {
     return DiveLog(
       id: id ?? this.id,
@@ -229,6 +232,7 @@ class DiveLog {
       selectedGearIds: selectedGearIds ?? this.selectedGearIds,
       equipment: equipment ?? this.equipment,
       notes: notes ?? this.notes,
+      photoUrls: photoUrls ?? this.photoUrls,
     );
   }
 }

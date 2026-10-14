@@ -9,4 +9,7 @@ abstract class MediaStorageRepository {
 
   /// 指定されたパスまたはダウンロードURLのファイルを削除する
   Future<void> deleteFile(String pathOrUrl);
+
+  /// 指定されたプレフィックス（ディレクトリ・フォルダ）配下の全ファイルを削除する
+  Future<void> deleteDirectory(String path);
 }
