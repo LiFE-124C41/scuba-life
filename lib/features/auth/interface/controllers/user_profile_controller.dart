@@ -7,6 +7,8 @@ import '../../usecase/delete_c_card_image.dart';
 import '../../usecase/get_user_profile.dart';
 import '../../usecase/sync_initial_profile.dart';
 import '../../usecase/update_user_profile.dart';
+import '../../usecase/upload_avatar_image.dart';
+import '../../usecase/delete_avatar_image.dart';
 import '../../usecase/upload_c_card_image.dart';
 import '../../usecase/watch_user_profile.dart';
 import 'auth_controller.dart';
@@ -52,6 +54,24 @@ final deleteCCardImageUseCaseProvider = Provider<DeleteCCardImage>((ref) {
   final mediaRepo = ref.watch(mediaStorageRepositoryProvider);
   final userRepo = ref.watch(userRepositoryProvider);
   return DeleteCCardImage(
+    mediaStorageRepository: mediaRepo,
+    userRepository: userRepo,
+  );
+});
+
+final uploadAvatarImageUseCaseProvider = Provider<UploadAvatarImage>((ref) {
+  final mediaRepo = ref.watch(mediaStorageRepositoryProvider);
+  final userRepo = ref.watch(userRepositoryProvider);
+  return UploadAvatarImage(
+    mediaStorageRepository: mediaRepo,
+    userRepository: userRepo,
+  );
+});
+
+final deleteAvatarImageUseCaseProvider = Provider<DeleteAvatarImage>((ref) {
+  final mediaRepo = ref.watch(mediaStorageRepositoryProvider);
+  final userRepo = ref.watch(userRepositoryProvider);
+  return DeleteAvatarImage(
     mediaStorageRepository: mediaRepo,
     userRepository: userRepo,
   );
@@ -153,6 +173,46 @@ class UserProfileNotifier extends AsyncNotifier<void> {
       await useCase(DeleteCCardImageParams(
         userId: userId,
         isFront: isFront,
+      ));
+      state = const AsyncValue.data(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      return false;
+    }
+  }
+
+  /// プロフィール写真（アバター画像）のアップロード
+  Future<bool> uploadAvatarImage({
+    required String userId,
+    required List<int> imageBytes,
+    String contentType = 'image/webp',
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final useCase = ref.read(uploadAvatarImageUseCaseProvider);
+      await useCase(UploadAvatarImageParams(
+        userId: userId,
+        imageBytes: imageBytes,
+        contentType: contentType,
+      ));
+      state = const AsyncValue.data(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      return false;
+    }
+  }
+
+  /// プロフィール写真（アバター画像）の削除
+  Future<bool> deleteAvatarImage({
+    required String userId,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final useCase = ref.read(deleteAvatarImageUseCaseProvider);
+      await useCase(DeleteAvatarImageParams(
+        userId: userId,
       ));
       state = const AsyncValue.data(null);
       return true;

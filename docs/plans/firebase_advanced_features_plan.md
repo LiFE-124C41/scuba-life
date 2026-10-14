@@ -270,7 +270,7 @@ gantt
 | マイルストーン | 主なタスク | 完了基準（Definition of Done） |
 | :--- | :--- | :--- |
 | **M-Ext 1: 品質基盤 (Crashlytics & Analytics)** | - `firebase_crashlytics`, `firebase_analytics` パッケージ導入<br>- `main.dart` でのグローバル例外ハンドラー登録<br>- オフラインステータス・ユーザーIDのCrashlyticsキー連携<br>- 主要アクション（ログ作成、SAC計算）のイベント測定 | 故意にスローした例外が Crashlytics ダッシュボードで正しく捕捉・分類され、ビルドエラーなく全テストが通ること。 |
-| **M-Ext 2: Cカード電子化 & Storage基盤** | - `firebase_storage` 導入 & `storage.rules` デプロイ<br>- `MediaRepository` 抽象IF & `FirebaseStorageRepository` 実装<br>- 画像選択・自動リサイズ/圧縮ロジック（Pure Dart UseCase / Infra）<br>- `ProfilePage` に Cカード表・裏の登録/表示/拡大プレビュー追加<br>- ユニットテスト & 小型端末（360px）レスポンシブテスト | Cカードの表面・裏面画像が Storage に保存・復元され、電波オフライン時でもキャッシュから正しく閲覧できること。 |
+| **M-Ext 2: Cカード電子化 & Storage基盤（+ プロフィール写真対応）** | - `firebase_storage` 導入 & `storage.rules` デプロイ<br>- `MediaRepository` 抽象IF & `FirebaseStorageRepository` 実装<br>- 画像選択・自動リサイズ/圧縮ロジック（Pure Dart UseCase / Infra）<br>- `ProfilePage` に Cカード表・裏の登録/表示/拡大プレビュー追加<br>- プロフィール写真（アバター）の変更・削除・拡大表示機能の実装<br>- ユニットテスト & 小型端末（360px）レスポンシブテスト | Cカードの表面・裏面画像およびプロフィール写真が Storage に保存・復元され、電波オフライン時でもキャッシュから正しく閲覧できること。 |
 | **M-Ext 3: ログブック写真添付 & 退会連動** | - `DiveLog` エンティティへの `photoUrls` 追加<br>- `DiveLogFormPage` での複数写真選択・削除チップUI<br>- `DiveLogDetailPage` での写真カルーセル/グリッド表示<br>- `DeleteAccount` UseCase でのユーザーStorageフォルダ完全消去 | ログ登録時に水中写真が複数枚保存され、詳細画面で美しく表示されること。退会時にStorage上の画像も物理削除されること。 |
 | **M-Ext 4: 安全リマインダー通知 (OH & トリップ)** | - `flutter_local_notifications` 連携基盤構築<br>- 通知権限リクエストダイアログの実装<br>- OH推奨期限（30日前 / 残り10本）自動スケジュール<br>- ダイビング予定前日 18:00 の準備リマインダー登録<br>- 通知タップ時の該当画面ディープリンク遷移 | 機材登録や予定作成時にローカル通知が正しくスケジュールされ、指定日時に端末へ通知が届くこと。 |
 | **M-Ext 5: 動的運用 & セキュリティ (Remote Config & App Check)** | - `firebase_remote_config` 導入 & スポットマスタ動的マージ<br>- 海況API障害時のお知らバナーUI<br>- `firebase_app_check` 導入（Play Integrity / DeviceCheck）<br>- README更新 & リリース前最終E2E検証 | アプリを更新せずにリモートから新規スポットが反映されること。正規アプリ以外からのアクセスが拒否されること。 |
@@ -302,14 +302,16 @@ gantt
   - [x] オフライン状態・Cカード情報・ユーザーIDメタデータ連携 (`monitoringSyncProvider`)
   - [x] 主要イベント（ログ作成・SAC計算・機材更新・タブ画面遷移）の計測配線
   - [x] 全205件テスト合格 & 解析エラー0件確認
-- [x] **M-Ext 2: Cカード電子化 & Storage基盤 【完了 ✅】**
+- [x] **M-Ext 2: Cカード電子化 & Storage基盤（+ プロフィール写真対応） 【完了 ✅】**
   - [x] `firebase_storage` & `image_picker` パッケージ追加 & `storage.rules` 定義
   - [x] `MediaStorageRepository` & `ImagePickerService` 抽象インターフェース策定 (Pure Dart)
   - [x] `FirebaseMediaStorageRepository` & `DefaultImagePickerService` 実装
-  - [x] `UserAccount` エンティティ拡張 (`cCardFrontUrl`, `cCardBackUrl`)
+  - [x] `UserAccount` エンティティ拡張 (`cCardFrontUrl`, `cCardBackUrl`, `clearPhotoUrl`)
   - [x] `UploadCCardImage` & `DeleteCCardImage` UseCase 実装
+  - [x] `UploadAvatarImage` & `DeleteAvatarImage` UseCase 実装
   - [x] `ProfilePage` に Cカード電子ライセンス証カード（`CCardImageCard`）およびフルスクリーン拡大ビューアー（`CCardFullScreenViewer`）追加
-  - [x] 小型端末（幅360px）レスポンシブテスト & 単体テスト作成（全214件テスト合格 & 解析エラー0件）
+  - [x] `ProfileAvatarWidget` 実装（カメラ・ライブラリからの写真選択・変更、拡大表示、削除、アップロード中スピナー）
+  - [x] 小型端末（幅360px）レスポンシブテスト & 単体テスト作成（全224件テスト合格 & 解析エラー0件）
 - [ ] **M-Ext 3: ログブック写真添付 & ストレージクリーンアップ**
   - [ ] `DiveLog` エンティティ拡張 (`photoUrls: List<String>`)
   - [ ] `FirestoreDiveLogRepository` スキーママッピング更新

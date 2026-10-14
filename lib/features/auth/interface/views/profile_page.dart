@@ -6,6 +6,7 @@ import '../controllers/auth_controller.dart';
 import '../controllers/user_profile_controller.dart';
 import 'widgets/edit_diver_profile_dialog.dart';
 import 'widgets/c_card_image_card.dart';
+import 'widgets/profile_avatar_widget.dart';
 import 'terms_of_service_page.dart';
 import 'privacy_policy_page.dart';
 
@@ -147,19 +148,9 @@ class ProfilePage extends ConsumerWidget {
                           padding: const EdgeInsets.all(20.0),
                           child: Column(
                             children: [
-                              CircleAvatar(
-                                radius: 40,
-                                backgroundColor: colorScheme.primaryContainer,
-                                backgroundImage: user.photoUrl != null
-                                    ? NetworkImage(user.photoUrl!)
-                                    : null,
-                                child: user.photoUrl == null
-                                    ? Icon(
-                                        Icons.person,
-                                        size: 48,
-                                        color: colorScheme.onPrimaryContainer,
-                                      )
-                                    : null,
+                              ProfileAvatarWidget(
+                                user: user,
+                                radius: 42,
                               ),
                               const SizedBox(height: 16),
                               Text(

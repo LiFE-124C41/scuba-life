@@ -132,7 +132,7 @@ class FirestoreUserRepository implements UserRepository {
       'uid': user.id,
       'email': user.email,
       if (user.displayName != null) 'displayName': user.displayName,
-      if (user.photoUrl != null) 'photoUrl': user.photoUrl,
+      'photoUrl': user.photoUrl,
       'isEmailVerified': user.isEmailVerified,
       if (user.certificationOrg != null) 'certificationOrg': user.certificationOrg,
       if (user.certificationLevel != null) 'certificationLevel': user.certificationLevel,
