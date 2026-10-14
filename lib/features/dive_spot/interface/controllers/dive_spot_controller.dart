@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/remote_config/interface/remote_config_providers.dart';
 import '../../domain/entities/dive_spot.dart';
 import '../../domain/repositories/dive_spot_repository.dart';
 import '../../../auth/interface/controllers/auth_controller.dart';
@@ -19,7 +20,8 @@ final diveSpotRepositoryProvider = Provider<DiveSpotRepository>((ref) {
 // ユースケースプロバイダー
 final getDiveSpotsUseCaseProvider = Provider<GetDiveSpotsUseCase>((ref) {
   final repository = ref.watch(diveSpotRepositoryProvider);
-  return GetDiveSpotsUseCase(repository);
+  final remoteConfigRepo = ref.watch(remoteConfigRepositoryProvider);
+  return GetDiveSpotsUseCase(repository, remoteConfigRepo);
 });
 
 final addDiveSpotUseCaseProvider = Provider<AddDiveSpotUseCase>((ref) {
@@ -37,6 +39,8 @@ final toggleFavoriteSpotUseCaseProvider =
 class DiveSpotListNotifier extends AsyncNotifier<List<DiveSpot>> {
   @override
   Future<List<DiveSpot>> build() async {
+    // Remote Config の動的更新をリアクティブに検知
+    ref.watch(remoteConfigNotifierProvider);
     final useCase = ref.watch(getDiveSpotsUseCaseProvider);
     return await useCase.execute();
   }

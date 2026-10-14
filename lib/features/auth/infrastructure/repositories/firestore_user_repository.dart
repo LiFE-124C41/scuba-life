@@ -119,6 +119,8 @@ class FirestoreUserRepository implements UserRepository {
       certificationLevel: data['certificationLevel'] as String?,
       cCardNumber: data['cCardNumber'] as String?,
       totalDivesOffset: (data['totalDivesOffset'] as num?)?.toInt() ?? 0,
+      cCardFrontUrl: data['cCardFrontUrl'] as String?,
+      cCardBackUrl: data['cCardBackUrl'] as String?,
       createdAt: parseDate(data['createdAt']),
       updatedAt: parseDate(data['updatedAt']),
     );
@@ -130,12 +132,14 @@ class FirestoreUserRepository implements UserRepository {
       'uid': user.id,
       'email': user.email,
       if (user.displayName != null) 'displayName': user.displayName,
-      if (user.photoUrl != null) 'photoUrl': user.photoUrl,
+      'photoUrl': user.photoUrl,
       'isEmailVerified': user.isEmailVerified,
       if (user.certificationOrg != null) 'certificationOrg': user.certificationOrg,
       if (user.certificationLevel != null) 'certificationLevel': user.certificationLevel,
       if (user.cCardNumber != null) 'cCardNumber': user.cCardNumber,
       'totalDivesOffset': user.totalDivesOffset,
+      'cCardFrontUrl': user.cCardFrontUrl,
+      'cCardBackUrl': user.cCardBackUrl,
       if (user.createdAt != null) 'createdAt': Timestamp.fromDate(user.createdAt!),
     };
   }

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/media/interface/media_providers.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/entities/user_account.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -53,9 +54,11 @@ final sendPasswordResetUseCaseProvider = Provider<SendPasswordReset>((ref) {
 final deleteAccountUseCaseProvider = Provider<DeleteAccount>((ref) {
   final authRepo = ref.watch(authRepositoryProvider);
   final userRepo = ref.watch(userRepositoryProvider);
+  final mediaRepo = ref.watch(mediaStorageRepositoryProvider);
   return DeleteAccount(
     authRepository: authRepo,
     userRepository: userRepo,
+    mediaStorageRepository: mediaRepo,
   );
 });
 

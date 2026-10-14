@@ -7,6 +7,7 @@ import '../../../schedule/interface/controllers/schedule_controller.dart';
 import '../../../dive_spot/interface/views/dive_spot_select_modal.dart';
 import '../../../my_gear/domain/entities/gear_item.dart';
 import '../../../my_gear/interface/controllers/gear_controller.dart';
+import 'widgets/dive_log_photo_picker_widget.dart';
 
 /// ダイビングログ新規作成・編集用フルスクリーンフォーム画面
 class DiveLogFormPage extends ConsumerStatefulWidget {
@@ -83,6 +84,10 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
   final List<String> _marineLife = [];
   final TextEditingController _marineLifeInputController = TextEditingController();
 
+  // 5. 写真
+  late String _logId;
+  final List<String> _photoUrls = [];
+
   final List<String> _divePurposes = ['ファンダイビング', '講習・教育', '体験ダイビング', '写真撮影', '調査・作業', 'その他'];
   final List<String> _entryMethods = ['ボート', 'ビーチ', 'その他'];
   final List<String> _waterAreas = ['海洋', '湖', '川', 'プール'];
@@ -100,6 +105,7 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
     final sched = widget.initialSchedule;
     final now = DateTime.now();
 
+    _logId = log?.id ?? 'log-${now.millisecondsSinceEpoch}';
     _selectedScheduleId = log?.scheduleId ?? sched?.id;
     _selectedDate = log?.date ?? sched?.eventDate ?? now;
     _entryTime = log != null
@@ -158,6 +164,7 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
       _buddies.addAll(log.buddies);
       _marineLife.addAll(log.marineLife);
       _selectedGearIds.addAll(log.selectedGearIds);
+      _photoUrls.addAll(log.photoUrls);
     }
   }
 
@@ -338,7 +345,7 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
     final isNewLog = widget.initialLog == null;
 
     final newLog = DiveLog(
-      id: widget.initialLog?.id ?? 'log-${DateTime.now().millisecondsSinceEpoch}',
+      id: _logId,
       scheduleId: _selectedScheduleId,
       date: _selectedDate,
       entryTime: entryDateTime,
@@ -380,6 +387,7 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
       selectedGearIds: List.unmodifiable(_selectedGearIds),
       equipment: _equipmentController.text.trim(),
       notes: _notesController.text.trim(),
+      photoUrls: List.unmodifiable(_photoUrls),
     );
 
     ref.read(diveLogListProvider.notifier).addLog(newLog);
@@ -1283,6 +1291,25 @@ class _DiveLogFormPageState extends ConsumerState<DiveLogFormPage> {
                     hintText: '透明度良好。流れも弱く快適なダイブ。生物の行動観察など...',
                     border: OutlineInputBorder(),
                   ),
+                ),
+              ],
+            ),
+
+            // 7. 水中写真・思い出写真 (最大5枚)
+            _buildSectionCard(
+              context: context,
+              title: '水中写真・アルバム',
+              icon: Icons.photo_camera_outlined,
+              children: [
+                DiveLogPhotoPickerWidget(
+                  logId: _logId,
+                  initialPhotoUrls: _photoUrls,
+                  onPhotosChanged: (updated) {
+                    setState(() {
+                      _photoUrls.clear();
+                      _photoUrls.addAll(updated);
+                    });
+                  },
                 ),
               ],
             ),

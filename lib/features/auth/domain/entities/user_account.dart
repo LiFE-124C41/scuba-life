@@ -15,6 +15,8 @@ class UserAccount {
   final String? certificationLevel;
   final String? cCardNumber;
   final int totalDivesOffset;
+  final String? cCardFrontUrl; // Cカード表面画像URL (Cloud Storage)
+  final String? cCardBackUrl;  // Cカード裏面画像URL (Cloud Storage)
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -28,6 +30,8 @@ class UserAccount {
     this.certificationLevel,
     this.cCardNumber,
     this.totalDivesOffset = 0,
+    this.cCardFrontUrl,
+    this.cCardBackUrl,
     this.createdAt,
     this.updatedAt,
   });
@@ -37,11 +41,16 @@ class UserAccount {
     String? email,
     String? displayName,
     String? photoUrl,
+    bool clearPhotoUrl = false,
     bool? isEmailVerified,
     String? certificationOrg,
     String? certificationLevel,
     String? cCardNumber,
     int? totalDivesOffset,
+    String? cCardFrontUrl,
+    bool clearCCardFrontUrl = false,
+    String? cCardBackUrl,
+    bool clearCCardBackUrl = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -49,12 +58,14 @@ class UserAccount {
       id: id ?? this.id,
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
-      photoUrl: photoUrl ?? this.photoUrl,
+      photoUrl: clearPhotoUrl ? null : (photoUrl ?? this.photoUrl),
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       certificationOrg: certificationOrg ?? this.certificationOrg,
       certificationLevel: certificationLevel ?? this.certificationLevel,
       cCardNumber: cCardNumber ?? this.cCardNumber,
       totalDivesOffset: totalDivesOffset ?? this.totalDivesOffset,
+      cCardFrontUrl: clearCCardFrontUrl ? null : (cCardFrontUrl ?? this.cCardFrontUrl),
+      cCardBackUrl: clearCCardBackUrl ? null : (cCardBackUrl ?? this.cCardBackUrl),
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -73,7 +84,9 @@ class UserAccount {
           certificationOrg == other.certificationOrg &&
           certificationLevel == other.certificationLevel &&
           cCardNumber == other.cCardNumber &&
-          totalDivesOffset == other.totalDivesOffset;
+          totalDivesOffset == other.totalDivesOffset &&
+          cCardFrontUrl == other.cCardFrontUrl &&
+          cCardBackUrl == other.cCardBackUrl;
 
   @override
   int get hashCode =>
@@ -85,9 +98,11 @@ class UserAccount {
       certificationOrg.hashCode ^
       certificationLevel.hashCode ^
       cCardNumber.hashCode ^
-      totalDivesOffset.hashCode;
+      totalDivesOffset.hashCode ^
+      cCardFrontUrl.hashCode ^
+      cCardBackUrl.hashCode;
 
   @override
   String toString() =>
-      'UserAccount(id: $id, email: $email, displayName: $displayName, verified: $isEmailVerified, org: $certificationOrg, level: $certificationLevel, cCard: $cCardNumber, offset: $totalDivesOffset)';
+      'UserAccount(id: $id, email: $email, displayName: $displayName, verified: $isEmailVerified, org: $certificationOrg, level: $certificationLevel, cCard: $cCardNumber, offset: $totalDivesOffset, cCardFront: $cCardFrontUrl, cCardBack: $cCardBackUrl)';
 }

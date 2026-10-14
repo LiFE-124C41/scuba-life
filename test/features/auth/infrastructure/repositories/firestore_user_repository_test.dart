@@ -16,6 +16,8 @@ void main() {
       certificationLevel: 'AOW (アドヴァンスド)',
       cCardNumber: '1234567890',
       totalDivesOffset: 30,
+      cCardFrontUrl: 'https://storage.example.com/front.webp',
+      cCardBackUrl: 'https://storage.example.com/back.webp',
     );
 
     setUp(() {
@@ -37,6 +39,8 @@ void main() {
       expect(fetched.certificationLevel, equals('AOW (アドヴァンスド)'));
       expect(fetched.cCardNumber, equals('1234567890'));
       expect(fetched.totalDivesOffset, equals(30));
+      expect(fetched.cCardFrontUrl, equals('https://storage.example.com/front.webp'));
+      expect(fetched.cCardBackUrl, equals('https://storage.example.com/back.webp'));
     });
 
     test('syncInitialProfile: 未作成時は新規ドキュメントが作成されること', () async {

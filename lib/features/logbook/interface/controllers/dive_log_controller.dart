@@ -6,8 +6,12 @@ import '../../infrastructure/repositories/in_memory_dive_log_repository.dart';
 import '../../usecase/get_dive_logs.dart';
 import '../../usecase/save_dive_log.dart';
 import '../../usecase/delete_dive_log.dart';
+import '../../usecase/upload_dive_log_photo.dart';
+import '../../usecase/delete_dive_log_photo.dart';
 import '../../../auth/interface/controllers/auth_controller.dart';
 import '../../../my_gear/interface/controllers/gear_controller.dart';
+import '../../../../core/media/interface/media_providers.dart';
+import '../../../../core/monitoring/interface/monitoring_providers.dart';
 import '../../../../core/usecase/usecase.dart';
 
 // --- DI Providers ---
@@ -17,7 +21,11 @@ import '../../../../core/usecase/usecase.dart';
 final diveLogRepositoryProvider = Provider<DiveLogRepository>((ref) {
   final authUser = ref.watch(authStateProvider).asData?.value;
   if (authUser != null) {
-    return FirestoreDiveLogRepository(userId: authUser.id);
+    final mediaStorage = ref.watch(mediaStorageRepositoryProvider);
+    return FirestoreDiveLogRepository(
+      userId: authUser.id,
+      mediaStorageRepository: mediaStorage,
+    );
   }
   return InMemoryDiveLogRepository();
 });
@@ -40,6 +48,18 @@ final deleteDiveLogUseCaseProvider = Provider<DeleteDiveLog>((ref) {
   return DeleteDiveLog(repository);
 });
 
+/// ログ写真アップロードユースケースのProvider
+final uploadDiveLogPhotoUseCaseProvider = Provider<UploadDiveLogPhoto>((ref) {
+  final mediaRepo = ref.watch(mediaStorageRepositoryProvider);
+  return UploadDiveLogPhoto(mediaRepo);
+});
+
+/// ログ写真削除ユースケースのProvider
+final deleteDiveLogPhotoUseCaseProvider = Provider<DeleteDiveLogPhoto>((ref) {
+  final mediaRepo = ref.watch(mediaStorageRepositoryProvider);
+  return DeleteDiveLogPhoto(mediaRepo);
+});
+
 // --- State Controller (Notifier) ---
 
 /// ログ一覧の状態管理コントローラー
@@ -59,6 +79,24 @@ class DiveLogListNotifier extends AsyncNotifier<List<DiveLog>> {
     state = await AsyncValue.guard(() async {
       final saveLog = ref.read(saveDiveLogUseCaseProvider);
       await saveLog(log);
+
+      // アナリティクスイベント計測
+      final analytics = ref.read(analyticsServiceProvider);
+      analytics.logDiveLogCreated(
+        spotName: log.location,
+        maxDepth: log.maxDepthMeter,
+        durationMinutes: log.bottomTimeMinutes,
+        rating: log.rating,
+      );
+      final sacRate = log.calculateSacRate();
+      if (sacRate > 0) {
+        analytics.logSacCalculated(
+          sacRate: sacRate,
+          avgDepth: log.avgDepthMeter,
+          durationMinutes: log.bottomTimeMinutes,
+        );
+      }
+
       final getLogs = ref.read(getDiveLogsUseCaseProvider);
       return await getLogs(const NoParams());
     });

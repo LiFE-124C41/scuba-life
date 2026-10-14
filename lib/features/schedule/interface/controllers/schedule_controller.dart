@@ -1,13 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/notification/interface/notification_providers.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/entities/dive_schedule.dart';
 import '../../domain/repositories/dive_schedule_repository.dart';
 import '../../../auth/interface/controllers/auth_controller.dart';
+import '../../../my_gear/interface/controllers/gear_controller.dart';
 import '../../infrastructure/repositories/firestore_schedule_repository.dart';
 import '../../infrastructure/repositories/in_memory_dive_schedule_repository.dart';
 import '../../usecase/add_dive_schedule.dart';
 import '../../usecase/delete_dive_schedule.dart';
 import '../../usecase/get_dive_schedules.dart';
+import '../../usecase/schedule_trip_packing_reminder.dart';
 import '../../usecase/update_dive_schedule.dart';
 
 /// リポジトリプロバイダー
@@ -164,6 +167,14 @@ class ScheduleCalendarNotifier extends Notifier<ScheduleCalendarState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _addDiveSchedule(schedule);
+      try {
+        final registeredGear = ref.read(gearListNotifierProvider).allItems;
+        final scheduler = ref.read(scheduleTripPackingReminderProvider);
+        await scheduler(ScheduleTripPackingReminderParams(
+          schedule: schedule,
+          registeredGear: registeredGear,
+        ));
+      } catch (_) {}
       await loadSchedules();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e);
@@ -175,6 +186,14 @@ class ScheduleCalendarNotifier extends Notifier<ScheduleCalendarState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _updateDiveSchedule(schedule);
+      try {
+        final registeredGear = ref.read(gearListNotifierProvider).allItems;
+        final scheduler = ref.read(scheduleTripPackingReminderProvider);
+        await scheduler(ScheduleTripPackingReminderParams(
+          schedule: schedule,
+          registeredGear: registeredGear,
+        ));
+      } catch (_) {}
       await loadSchedules();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e);
@@ -229,6 +248,10 @@ class ScheduleCalendarNotifier extends Notifier<ScheduleCalendarState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _deleteDiveSchedule(id);
+      try {
+        final canceller = ref.read(cancelTripPackingReminderProvider);
+        await canceller(id);
+      } catch (_) {}
       await loadSchedules();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e);

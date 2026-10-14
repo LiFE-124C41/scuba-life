@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/monitoring/interface/monitoring_providers.dart';
+import '../core/remote_config/interface/views/maintenance_banner_widget.dart';
 import '../features/auth/interface/controllers/auth_controller.dart';
 import '../features/auth/interface/views/sign_in_page.dart';
 import '../features/logbook/interface/views/dive_log_page.dart';
@@ -12,6 +14,9 @@ class ScubaLifeApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 認証情報・プロファイルを Crashlytics / Analytics に自動同期
+    ref.watch(monitoringSyncProvider);
+
     final authState = ref.watch(authStateProvider);
 
     return MaterialApp(
@@ -43,14 +48,14 @@ class ScubaLifeApp extends ConsumerWidget {
   }
 }
 
-class MainNavigationScreen extends StatefulWidget {
+class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
 
   @override
-  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+  ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
+class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = const [
@@ -60,17 +65,36 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     MyGearPage(),
   ];
 
+  static const List<String> _screenNames = [
+    'DiveLogPage',
+    'MarineLifePage',
+    'SchedulePage',
+    'MyGearPage',
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const MaintenanceBannerWidget(),
+            Expanded(child: _pages[_currentIndex]),
+          ],
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
           setState(() {
             _currentIndex = index;
           });
+          ref.read(analyticsServiceProvider).logScreenView(
+                screenName: _screenNames[index],
+              );
         },
+
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.book_outlined),

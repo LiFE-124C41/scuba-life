@@ -1,8 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
+import 'core/notification/infrastructure/firebase_push_notification_repository.dart';
+import 'core/notification/infrastructure/flutter_local_notification_repository.dart';
+import 'core/performance/infrastructure/firebase_performance_tracker.dart';
+import 'core/remote_config/infrastructure/firebase_remote_config_repository.dart';
+import 'core/security/app_check_service.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -16,8 +23,66 @@ Future<void> main() async {
       persistenceEnabled: true,
       cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
     );
+
+    // Crashlytics グローバルエラーハンドラの設定
+    if (!kIsWeb) {
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FlutterError.presentError(details);
+        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+      };
+
+      PlatformDispatcher.instance.onError = (error, stack) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        return true;
+      };
+    }
   } catch (e) {
-    debugPrint('Firebase initialization / Firestore settings error: $e');
+    debugPrint('Firebase initialization / Crashlytics setup error: $e');
+  }
+
+  // Firebase Performance Monitoring の初期化
+  try {
+    final performanceTracker = FirebasePerformanceTracker();
+    await performanceTracker.initialize();
+  } catch (e) {
+    debugPrint('Performance Tracker setup error: $e');
+  }
+
+  // Firebase App Check の有効化
+  try {
+    await AppCheckService.initialize();
+  } catch (e) {
+    debugPrint('App Check setup error: $e');
+  }
+
+  // Remote Config の初期化 & フェッチ
+  try {
+    final remoteConfigRepo = FirebaseRemoteConfigRepository();
+    await remoteConfigRepo.initialize();
+    remoteConfigRepo.fetchAndActivate().ignore();
+  } catch (e) {
+    debugPrint('Remote Config setup error: $e');
+  }
+
+  // 通知リポジトリの初期化
+  late final FlutterLocalNotificationRepository notificationRepo;
+  try {
+    notificationRepo = FlutterLocalNotificationRepository();
+    await notificationRepo.initialize();
+  } catch (e) {
+    debugPrint('Notification setup error: $e');
+  }
+
+  // Firebase Cloud Messaging (FCM) プッシュ通知の初期化
+  try {
+    final pushRepo = FirebasePushNotificationRepository(
+      localNotificationRepository: notificationRepo,
+    );
+    await pushRepo.initialize();
+    pushRepo.subscribeToTopic('weather_alerts').ignore();
+    pushRepo.subscribeToTopic('announcements').ignore();
+  } catch (e) {
+    debugPrint('Push Notification setup error: $e');
   }
 
   runApp(
@@ -26,3 +91,4 @@ Future<void> main() async {
     ),
   );
 }
+

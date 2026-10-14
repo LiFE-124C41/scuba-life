@@ -238,7 +238,7 @@ gantt
 
 | マイルストーン | 進捗 | 主なタスク | 完了基準（Definition of Done） |
 | :--- | :---: | :--- | :--- |
-| **M1: Firebase環境構築 & セキュリティルール策定** | **【完了 ✅】** | - Firebaseコンソールでのプロジェクト作成 (`scuba-life-a29fb`)<br>- `flutterfire configure` によるAndroid/iOS接続設定<br>- Firestore コレクション設計 & セキュリティルール作成・デプロイ<br>- Android デバッグ SHA-1 / SHA-256 フィンガープリント登録<br>- 機密ファイル（`firebase_options.dart` 等）の `.gitignore` 除外 & `.example` テンプレート整備 | Firebase CLIおよび実環境で接続が通り、セキュリティルールが本番デプロイ済みであること。 |
+| **M1: Firebase環境構築 & セキュリティルール策定** | **【完了 ✅】** | - Firebaseコンソールでのプロジェクト作成<br>- `flutterfire configure` によるAndroid/iOS接続設定<br>- Firestore コレクション設計 & セキュリティルール作成・デプロイ<br>- Android デバッグ SHA-1 / SHA-256 フィンガープリント登録<br>- 機密ファイル（`firebase_options.dart` 等）の `.gitignore` 除外 & `.example` テンプレート整備 | Firebase CLIおよび実環境で接続が通り、セキュリティルールが本番デプロイ済みであること。 |
 | **M2: 認証機能の実装（メール/PW + Google SSO）** | **【完了 ✅】** | - `features/auth` Clean Architecture 完全準拠実装<br>- メールアドレス登録・ログイン・ログアウト<br>- Googleサインイン / Google SSO 新規登録<br>- パスワードマネージャー（Bitwarden等）Autofill対応<br>- ログイン状態によるアプリ起点ルーティング制御<br>- Riverpod Notifier & UseCase 単体テスト作成（全155件パス） | 新規ユーザー登録、ログイン、Google SSO、ログアウトが実機で動作確認済みであること。 |
 | **M2.5: ユーザープロファイル連携 & Cカード情報保存** | **【完了 ✅】** | - Firestore `users/{userId}` 初期ドキュメントの自動生成 (upsert)<br>- Cカード情報（指導団体: PADI等、ランク: OW/AOW等、カード番号、経験本数オフセット）の編集・保存<br>- プロフィール画面（`ProfilePage`）拡張および編集ダイアログ実装<br>- UseCase・UI・小型画面（360px）レスポンシブテスト作成（全162件パス） | プロフィール編集内容が Firestore に永続化され、アプリ再起動後も正しく復元されること。 |
 | **M3: 各種データのクラウド永続化（Firestore同期）** | **【完了 ✅】** | - `FirestoreDiveLogRepository` (`/users/{userId}/dive_logs`)<br>- `FirestoreGearRepository` (`/users/{userId}/gear_items`)<br>- `FirestoreScheduleRepository` (`/users/{userId}/dive_schedules`)<br>- `FirestoreDiveSpotRepository` (`/dive_spots`, `favorite_spots`)<br>- リポジトリProviderのFirestore版動的切り替え<br>- `fake_cloud_firestore` によるリポジトリ単体テスト（全177件パス） | ログ登録や機材変更を行うと即座にFirestoreに反映され、別端末・再起動後もデータが完全に復元されること。 |
@@ -254,12 +254,11 @@ gantt
 2026年10月時点の実装実績は以下の通りです。Clean Architecture および強固なセキュリティ設計に基づき、基盤からUIまで堅牢に実装されています。
 
 ### 1. インフラ & 環境設定（M1実績）
-- **Firebase プロジェクト**: `scuba-life-a29fb`
 - **Android 設定**:
-  - パッケージ名: `com.life_124c41.scuba_life` (App ID: `1:37794312799:android:c7583980414fa79d3c61ea`)
-  - デバッグ証明書 SHA-1 (`6F:A9:83:24:6C:82:27:98:CD:A4:40:EF:93:0B:9C:73:65:C9:46:4D`) および SHA-256 を Firebase CLI 経由で登録完了。
+  - パッケージ名: `com.life_124c41.scuba_life`
+  - デバッグ証明書 SHA-1 および SHA-256 を Firebase CLI 経由で登録完了。
 - **iOS 設定**:
-  - Bundle Identifier: Appleの命名規則（アンダースコア禁止）に準拠し `com.life-124c41.scuba-life` (App ID: `1:37794312799:ios:b2ee25516922467f3c61ea`) として登録。
+  - Bundle Identifier: Appleの命名規則（アンダースコア禁止）に準拠し `com.life-124c41.scuba-life` として登録。
   - OAuth クライアントIDおよび反転URLスキームを `Info.plist` に設定完了。
 - **機密情報の保護 & セキュリティポリシー**:
   - リポジトリに機密・環境固有ファイル（`firebase.json`, `.firebaserc`, `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`）がコミットされないよう `.gitignore` を設定。
@@ -431,7 +430,7 @@ flowchart TD
 開発の進捗に合わせて本チェックリストを更新します。
 
 - [x] **M1: Firebase環境構築**
-  - [x] Firebase プロジェクト作成 (`scuba-life-a29fb`)
+  - [x] Firebase プロジェクト作成
   - [x] Android / iOS 設定 & 証明書登録
   - [x] 機密ファイルの Git 管理外設定 & テンプレート配備
   - [x] Firestore セキュリティルールの本番デプロイ
