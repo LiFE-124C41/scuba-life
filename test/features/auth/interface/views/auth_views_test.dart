@@ -447,6 +447,45 @@ void main() {
       fakeUserRepo.dispose();
     });
 
+    testWidgets('ProfilePage: 通知・安全リマインダー設定のリストタイルが表示され画面遷移できること',
+        (WidgetTester tester) async {
+      const initialUser = UserAccount(
+        id: 'user-notif-nav-test',
+        email: 'notif.test@example.com',
+        displayName: '通知テストダイバー',
+      );
+      final loggedInRepo = InMemoryAuthRepository(initialUser: initialUser);
+      final fakeUserRepo = InMemoryUserRepository(initialUsers: {
+        initialUser.id: initialUser,
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(loggedInRepo),
+            userRepositoryProvider.overrideWithValue(fakeUserRepo),
+          ],
+          child: const MaterialApp(
+            home: ProfilePage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final notifTile = find.byKey(const Key('profile_notification_settings_tile'));
+      expect(notifTile, findsOneWidget);
+
+      await tester.ensureVisible(notifTile);
+      await tester.tap(notifTile);
+      await tester.pumpAndSettle();
+
+      expect(find.text('通知設定'), findsOneWidget);
+      expect(find.text('安全リマインダー設定'), findsOneWidget);
+
+      loggedInRepo.dispose();
+      fakeUserRepo.dispose();
+    });
+
     testWidgets('TermsOfServicePage & PrivacyPolicyPage: スタンドアロン描画確認',
         (WidgetTester tester) async {
       // 1. 利用規約画面

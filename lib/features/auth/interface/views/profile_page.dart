@@ -7,6 +7,7 @@ import '../controllers/user_profile_controller.dart';
 import 'widgets/edit_diver_profile_dialog.dart';
 import 'widgets/c_card_image_card.dart';
 import 'widgets/profile_avatar_widget.dart';
+import '../../../../core/notification/interface/views/notification_settings_page.dart';
 import 'terms_of_service_page.dart';
 import 'privacy_policy_page.dart';
 
@@ -354,6 +355,34 @@ class ProfilePage extends ConsumerWidget {
                                 user.createdAt != null
                                     ? '${user.createdAt!.year}/${user.createdAt!.month}/${user.createdAt!.day}'
                                     : '記録なし',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 3.5 アプリ設定
+                      Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              key: const Key('profile_notification_settings_tile'),
+                              leading: Icon(Icons.notifications_active_outlined, color: colorScheme.primary),
+                              title: const Text('通知・安全リマインダー設定'),
+                              subtitle: const Text('機材OH目安 & トリップ前日準備通知'),
+                              trailing: const Icon(Icons.chevron_right, size: 20),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const NotificationSettingsPage(),
+                                ),
                               ),
                             ),
                           ],

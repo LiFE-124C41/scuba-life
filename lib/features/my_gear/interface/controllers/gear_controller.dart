@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/monitoring/interface/monitoring_providers.dart';
+import '../../../../core/notification/interface/notification_providers.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/entities/gear_item.dart';
 import '../../domain/repositories/gear_repository.dart';
@@ -12,6 +13,7 @@ import '../../usecase/get_gear_items.dart';
 import '../../usecase/increment_gear_dives.dart';
 import '../../usecase/record_overhaul.dart';
 import '../../usecase/save_gear_item.dart';
+import '../../usecase/schedule_gear_overhaul_reminder.dart';
 
 /// リポジトリプロバイダー
 /// ログイン中は FirestoreGearRepository、未ログインやテスト時は InMemoryGearRepository を返却
@@ -136,6 +138,12 @@ class GearListNotifier extends Notifier<GearListState> {
             name: gear.name,
             category: gear.category.name,
           );
+      try {
+        final scheduler = ref.read(scheduleGearOverhaulReminderProvider);
+        await scheduler(ScheduleGearOverhaulReminderParams(gear: gear));
+      } catch (_) {
+        // 通知スケジュールの失敗は機材保存自体をブロックしない
+      }
       await loadGear();
     } catch (e) {
       state = state.copyWith(error: e);
@@ -147,6 +155,10 @@ class GearListNotifier extends Notifier<GearListState> {
     try {
       final deleteItem = ref.read(deleteGearItemUseCaseProvider);
       await deleteItem(id);
+      try {
+        final canceller = ref.read(cancelGearOverhaulReminderProvider);
+        await canceller(id);
+      } catch (_) {}
       await loadGear();
     } catch (e) {
       state = state.copyWith(error: e);
@@ -173,6 +185,10 @@ class GearListNotifier extends Notifier<GearListState> {
             category: updated.category.name,
             divesReset: updated.divesSinceOverhaul,
           );
+      try {
+        final scheduler = ref.read(scheduleGearOverhaulReminderProvider);
+        await scheduler(ScheduleGearOverhaulReminderParams(gear: updated));
+      } catch (_) {}
       await loadGear();
       return updated;
     } catch (e) {
@@ -186,6 +202,15 @@ class GearListNotifier extends Notifier<GearListState> {
       final incrementUseCase = ref.read(incrementGearDivesUseCaseProvider);
       await incrementUseCase(gearIds);
       await loadGear();
+      for (final id in gearIds) {
+        final item = state.allItems.where((g) => g.id == id).firstOrNull;
+        if (item != null) {
+          try {
+            final scheduler = ref.read(scheduleGearOverhaulReminderProvider);
+            await scheduler(ScheduleGearOverhaulReminderParams(gear: item));
+          } catch (_) {}
+        }
+      }
     } catch (e) {
       state = state.copyWith(error: e);
       rethrow;
@@ -197,6 +222,15 @@ class GearListNotifier extends Notifier<GearListState> {
       final decrementUseCase = ref.read(decrementGearDivesUseCaseProvider);
       await decrementUseCase(gearIds);
       await loadGear();
+      for (final id in gearIds) {
+        final item = state.allItems.where((g) => g.id == id).firstOrNull;
+        if (item != null) {
+          try {
+            final scheduler = ref.read(scheduleGearOverhaulReminderProvider);
+            await scheduler(ScheduleGearOverhaulReminderParams(gear: item));
+          } catch (_) {}
+        }
+      }
     } catch (e) {
       state = state.copyWith(error: e);
       rethrow;

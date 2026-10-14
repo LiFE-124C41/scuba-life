@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
+import 'core/notification/infrastructure/flutter_local_notification_repository.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -33,6 +34,14 @@ Future<void> main() async {
     }
   } catch (e) {
     debugPrint('Firebase initialization / Crashlytics setup error: $e');
+  }
+
+  // 通知リポジトリの初期化
+  try {
+    final notificationRepo = FlutterLocalNotificationRepository();
+    await notificationRepo.initialize();
+  } catch (e) {
+    debugPrint('Notification setup error: $e');
   }
 
   runApp(

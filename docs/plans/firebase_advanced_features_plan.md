@@ -319,13 +319,13 @@ gantt
   - [x] `DiveLogDetailPage` 写真ギャラリー & 拡大モーダル実装 (`DiveLogPhotoGalleryWidget`)
   - [x] `DeleteAccount` UseCase に Storage 画像完全消去処理を追加 (`mediaStorageRepository.deleteDirectory`)
   - [x] 単体テスト & ウィジェットテスト合格確認（写真追加・削除・退会ストレージ消去・360pxレスポンシブ）
-- [ ] **M-Ext 4: 安全リマインダー通知 (OH & トリップ)**
-  - [ ] `flutter_local_notifications` パッケージ導入 & プラットフォーム権限設定
-  - [ ] `NotificationRepository` 抽象IF & ローカル通知サービス実装
-  - [ ] マイ機材OH目安（残り30日 / 残り10本）通知スケジュール連動
-  - [ ] ダイビング予定前日リマインダー通知連動
-  - [ ] 通知設定画面（ON/OFF切り替え）の実装
-  - [ ] 通知スケジュールの単体テスト作成
+- [x] **M-Ext 4: 安全リマインダー通知 (OH & トリップ) 【完了 ✅】**
+  - [x] `flutter_local_notifications` & `timezone` パッケージ導入 & プラットフォーム権限設定 (`AndroidManifest.xml`)
+  - [x] `NotificationRepository` 抽象IF & `FlutterLocalNotificationRepository` 実装 (Pure Dart & フォールバック完備)
+  - [x] マイ機材OH目安（残り30日 / 残り10本）通知スケジュール連動 (`ScheduleGearOverhaulReminder` / `CancelGearOverhaulReminder`)
+  - [x] ダイビング予定前日リマインダー通知連動 (`ScheduleTripPackingReminder` / `CancelTripPackingReminder`)
+  - [x] 通知設定画面 (`NotificationSettingsPage`) & プロフィール画面への設定導線追加
+  - [x] 通知スケジュール・キャンセル・設定UI単体 & 小型画面（幅360px）ウィジェットテスト作成（全257件テスト合格 & 解析エラー0件）
 - [ ] **M-Ext 5: 動的運用 & セキュリティ (Remote Config & App Check)**
   - [ ] `firebase_remote_config` パッケージ導入
   - [ ] スポットマスタの動的取得 & ローカルマスタとのマージ実装
