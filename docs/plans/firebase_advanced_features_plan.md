@@ -85,7 +85,7 @@ graph TD
 Firestore のユーザーサブコレクション構造と完全に同期したパス設計を採用します。
 
 ```text
-gs://scuba-life-a29fb.firebasestorage.app/
+gs://<YOUR_PROJECT_ID>.firebasestorage.app/
 └── users/
     └── {userId}/
         ├── profile/
