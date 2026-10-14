@@ -79,3 +79,36 @@ Firebase アカウント権限の付与待ちやオフライン時など、と�
 # Bash
 ./scripts/backup_firebase_configs.sh --restore
 ```
+
+---
+
+## 🚀 4. Firebase App Distribution への配布 (GitHub Actions)
+
+CI/CD によるビルド＆テスター配布は、GitHub Actions ワークフロー [`.github/workflows/firebase_app_distribution.yml`](../.github/workflows/firebase_app_distribution.yml) により全自動化されています。
+
+### 🐙 実行方法
+1. GitHub リポジトリの **Actions** タブを開きます。
+2. 左メニューから **Firebase App Distribution** を選択します。
+3. **Run workflow** をクリックし、以下を指定して実行します：
+   - 対象プラットフォーム (`android` / `ios`)
+   - バイナリ形式 (`apk` / `aab`)
+   - 配布先テスターグループ名 (`testers` 等)
+   - リリースノート（任意、未入力時は直近のコミット情報から自動生成）
+
+### 🔐 必要な GitHub Repository Secrets
+リポジトリの **Settings** > **Secrets and variables** > **Actions** に以下を登録します：
+
+| Secret 名 | 必須度 | 説明 |
+| :--- | :---: | :--- |
+| `FIREBASE_SERVICE_ACCOUNT` | **推奨** | GCPコンソールで発行した Firebase 管理者権限を持つサービスアカウントキー JSON の全文 |
+| `FIREBASE_TOKEN` | 代替 | `firebase login:ci` コマンドで生成された CI 認証トークン |
+| `GOOGLE_SERVICES_JSON_BASE64` | 任意 | `android/app/google-services.json` を base64 エンコードした文字列（`.gitignore` されている場合） |
+| `FIREBASE_OPTIONS_DART_BASE64` | 任意 | `lib/firebase_options.dart` を base64 エンコードした文字列（`.gitignore` されている場合） |
+| `GOOGLE_SERVICE_INFO_PLIST_BASE64` | 任意 | `ios/Runner/GoogleService-Info.plist` を base64 エンコードした文字列（iOS配布時） |
+
+> **Base64 文字列の作成方法（PowerShell）:**
+> ```powershell
+> [Convert]::ToBase64String([IO.File]::ReadAllBytes("android/app/google-services.json")) | Set-Clipboard
+> ```
+
+
