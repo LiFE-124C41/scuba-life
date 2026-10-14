@@ -148,7 +148,7 @@ if (-not $flutterfireCmd) {
     Write-Host "  >> Running 'dart pub global activate flutterfire_cli'..." -ForegroundColor Cyan
     dart pub global activate flutterfire_cli
     
-    if (Test-Path $pubCacheBin -and ($env:PATH -notlike "*$pubCacheBin*")) {
+    if ((Test-Path $pubCacheBin) -and ($env:PATH -notlike "*$pubCacheBin*")) {
         $env:PATH = "$pubCacheBin;$env:PATH"
     }
     $flutterfireCmd = Get-Command "flutterfire" -ErrorAction SilentlyContinue
