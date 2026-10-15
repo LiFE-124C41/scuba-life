@@ -111,4 +111,19 @@ CI/CD によるビルド＆テスター配布は、GitHub Actions ワークフ�
 > [Convert]::ToBase64String([IO.File]::ReadAllBytes("android/app/google-services.json")) | Set-Clipboard
 > ```
 
+---
+
+### ⚠️ Android のバイナリ形式に関する注意点 (`apk` vs `aab`)
+
+| 形式 | Google Play 連携 | 推奨ユースケース | 特徴 |
+| :--- | :---: | :--- | :--- |
+| **`apk`** | **不要** | **テスター配布（既定・推奨）** | Firebase App Distribution 単体ですぐに配布可能。テスターはそのままアプリをインストールできます。 |
+| **`aab`** | **必須** | 本番ストア提出の事前検証 | Google Play の内部アプリ共有バックエンドを利用するため、**Firebase プロジェクトと Google Play Console の連携**が必須です。未連携の場合は `This project is not linked to a Google Play account.` エラーになります。 |
+
+> **Google Play との連携手順（AAB 配布を行いたい場合）:**
+> 1. [Firebase Console](https://console.firebase.google.com/) を開く。
+> 2. プロジェクトの「設定（歯車マーク）」>「統合（Integrations）」タブを開く。
+> 3. 「Google Play」カードの「リンク」をクリックし、Google Play Developer アカウントとリンクを完了させる。
+
+
 
